@@ -1,0 +1,16 @@
+services:
+  resolver:
+    build: .
+    image: 4did-resolver:2.3
+    ports:
+      - "${PORT:-4141}:4141"
+    environment:
+      PORT: "4141"
+      STORE: "${STORE:-memory}"
+      DB_PATH: "/data/4did.db"
+      SEED: "${SEED:-true}"
+    volumes:
+      - 4did-data:/data
+    restart: unless-stopped
+volumes:
+  4did-data:

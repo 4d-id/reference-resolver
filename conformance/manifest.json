@@ -1,0 +1,541 @@
+{
+  "note": "Phase 1 skeleton, generated from the 2.3 spec Annex A tables. 'schema' = a schema-level (D) check is wired now; 'todo' = awaits the reference resolver (Phase 2+).",
+  "version": "2.3",
+  "tests": [
+    {
+      "id": "/conf/core/strict-tree",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/depth",
+      "method": "IF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/identity-stable",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/genesis-anchor",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/descriptor",
+      "method": "ID",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/genesis-implicit",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/uri-form",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/state-fields",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/timestamps",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/sequence",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/motion-mode",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/discontinuity",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/vertical-reference",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/lcs",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/composition",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/uniform-scale",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/uncertainty",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/provenance",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/lifecycle",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/structural-history",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/derivation",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/labels",
+      "method": "DF",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/promotion",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/relation",
+      "method": "DF",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/represents",
+      "method": "DF",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/core/identified-as",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/dggs-variant",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/geopose",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/motion/fields",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/motion/decay",
+      "method": "IF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/history/fields",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/history/advisory",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presence/attestation",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presence/credential",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/semantics/fields",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/query/operations",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/query/cell-time",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/query/relations",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/query/events",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/query/context-envelope",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/query/ray",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/query/visibility",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/features/vector",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/semantics/localization",
+      "method": "D",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/semantics/event",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/privacy/pseudonym",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/privacy/scoped-disclosure",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/privacy/retention",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/privacy/consent",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/privacy/place-policy",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/authenticated-operations",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/replay",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/limits-and-keys",
+      "method": "FI",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/attested-delegation",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/signed-content",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/disclosure-inheritance",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/perception-provenance",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/aggregate-suppression",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/erasure",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/audit",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/assured-labels",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/security/authenticated-state",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/region-keyed",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/interest",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/priority",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/backpressure",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/partition",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/failure-handling",
+      "method": "IF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/propagation/replay",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/zone",
+      "method": "IF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/home-register",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/caching",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/handoff",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/single-writer",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/local-first",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/lifecycle/observation",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/lifecycle/observation-record",
+      "method": "DF",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/lifecycle/merge",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/lifecycle/split",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/lifecycle/lease",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/lifecycle/layer",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/almanac",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/threshold-publish",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/keyframe-delta",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/change-locality",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/handle-table",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/generation",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/digest",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/list-then-watch",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/snapshot",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/scale/aggregate",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/declaration",
+      "method": "DF",
+      "status": "schema"
+    },
+    {
+      "id": "/conf/domain/embedding",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/instancing",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/portal",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/portal-crossing",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/proxy",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/authority-asymmetry",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/affordance-truth",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/view-identity",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/time-mapping",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/domain/correspondence",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presentation/viewpoint",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presentation/ladder",
+      "method": "D",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presentation/transition",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presentation/tier-honesty",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/presentation/overlay-confidence",
+      "method": "F",
+      "status": "todo"
+    }
+  ]
+}

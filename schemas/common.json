@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://4did.org/schemas/2.3/common.json",
+  "title": "4D-ID common definitions",
+  "$defs": {
+    "fourdid": {
+      "type": "string",
+      "description": "Canonical 4D-ID URI (Part 1, 7.2). Genesis marker optional for a UUIDv7 descriptor.",
+      "pattern": "^4did:[A-Za-z0-9]{1,8}:(?:[A-Za-z0-9_-]{22,86}\\.)?[A-Za-z0-9.-]{1,64}(?:;v=[A-Za-z0-9.-]{1,40})?:[A-Za-z0-9_-]{22,86}(?::[0-9]{8}T[0-9]{6}(?:\\.[0-9]{1,6})?Z)?$"
+    },
+    "instant": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 instant with UTC offset (Part 1, 5.2)."
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "quaternion": {
+      "type": "array",
+      "description": "Unit quaternion, order (x, y, z, w), Hamilton convention (Part 1, 5.2).",
+      "items": { "type": "number" },
+      "minItems": 4, "maxItems": 4
+    },
+    "vec3": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+    "anchor": {
+      "type": "object",
+      "description": "Current DGGS anchor (Part 1, 7.3).",
+      "properties": {
+        "variant": { "type": "string", "description": "DGGS variant: h3, s2, isea3h, or oct for a virtual domain." },
+        "cell": { "type": "string" },
+        "resolution": { "type": "integer", "minimum": 0 },
+        "vref": { "type": "string", "description": "Vertical datum or floor reference (Part 1, 7.2)." }
+      },
+      "required": ["variant", "cell", "resolution"],
+      "additionalProperties": false
+    },
+    "pose": {
+      "type": "object",
+      "description": "GeoPose-compatible pose relative to parent (Part 1, 7.3, 8).",
+      "properties": {
+        "position": { "$ref": "#/$defs/vec3" },
+        "orientation": { "$ref": "#/$defs/quaternion" },
+        "scale": { "type": "number", "exclusiveMinimum": 0, "description": "Optional uniform scale (Part 1, 7.7)." }
+      },
+      "required": ["position", "orientation"],
+      "additionalProperties": false
+    },
+    "uncertainty": {
+      "type": "object",
+      "description": "Position covariance (upper triangular, m^2), orientation sigma (rad), confidence (Part 1, 7.8).",
+      "properties": {
+        "position_cov_upper": { "type": "array", "items": { "type": "number" }, "minItems": 6, "maxItems": 6 },
+        "orientation_sigma_rad": { "type": "number", "minimum": 0 },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Producer, method, registration quality and tier; fused-state and agent-run provenance (Part 1, 7.8).",
+      "properties": {
+        "method": { "type": "string" },
+        "rms_m": { "type": "number", "minimum": 0 },
+        "tier": { "type": "string", "enum": ["logical", "navigational", "metric"] },
+        "registered": { "$ref": "#/$defs/instant" },
+        "supporting_observations": { "type": "array", "items": { "type": "string" } },
+        "fusion_authority": { "type": "string" },
+        "fusion_model": { "type": "string" },
+        "identity_confidence": { "$ref": "#/$defs/confidence" },
+        "state_confidence": { "$ref": "#/$defs/confidence" },
+        "agent_id": { "type": "string" },
+        "agent_run_id": { "type": "string" },
+        "task_id": { "type": "string" },
+        "model": { "type": "string" },
+        "input_snapshot": { "type": "string" },
+        "evidence_refs": { "type": "array", "items": { "type": "string" } },
+        "approval_status": { "type": "string", "enum": ["proposed", "approved", "rejected"] }
+      },
+      "additionalProperties": false
+    },
+    "label": {
+      "type": "object",
+      "description": "Human-readable label; never determines identity (Part 1, 7.9).",
+      "properties": {
+        "text": { "type": "string" },
+        "lang": { "type": "string" },
+        "source": { "type": "string" },
+        "valid_from": { "$ref": "#/$defs/instant" },
+        "valid_to": { "$ref": "#/$defs/instant" }
+      },
+      "required": ["text"],
+      "additionalProperties": false
+    },
+    "relation": {
+      "type": "object",
+      "description": "Typed relation with validity, confidence, provenance; never implies a transform (Part 1, 7.9).",
+      "properties": {
+        "type": { "type": "string", "description": "proxy_of | portal | corresponds_to | observed_by | represents | identified_as | taxonomy-namespaced" },
+        "target": { "$ref": "#/$defs/fourdid" },
+        "registry": { "type": "string" },
+        "external_id": { "type": "string" },
+        "kind": { "type": "string", "description": "For represents: pointcloud|splat|mesh|panorama|ifc|tileset." },
+        "lod": { "type": "string" },
+        "captured": { "$ref": "#/$defs/instant" },
+        "license": { "type": "string" },
+        "supersedes": { "$ref": "#/$defs/fourdid" },
+        "valid_from": { "$ref": "#/$defs/instant" },
+        "valid_to": { "$ref": "#/$defs/instant" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "provenance": { "$ref": "#/$defs/provenance" }
+      },
+      "required": ["type"],
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "identified_as" } } },
+          "then": { "required": ["registry", "external_id"] }
+        },
+        {
+          "if": { "properties": { "type": { "enum": ["proxy_of", "portal", "corresponds_to", "observed_by", "represents"] } } },
+          "then": { "required": ["target"] }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}

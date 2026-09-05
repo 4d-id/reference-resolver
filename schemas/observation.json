@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://4did.org/schemas/2.3/observation.json",
+  "title": "Observation",
+  "description": "Ephemeral evidence, never propagated as identity state (Part 4, 15.1).",
+  "type": "object",
+  "properties": {
+    "sensor_id": { "type": "string" },
+    "source": { "$ref": "common.json#/$defs/instant" },
+    "bound_s": { "type": "number", "minimum": 0 },
+    "frame": { "type": "string", "description": "4D-ID of the frame the pose is expressed in." },
+    "pose": { "$ref": "common.json#/$defs/pose" },
+    "uncertainty": { "$ref": "common.json#/$defs/uncertainty" },
+    "classification": { "type": "string" },
+    "confidence": { "$ref": "common.json#/$defs/confidence" },
+    "evidence_hash": { "type": "string" },
+    "expiry": { "$ref": "common.json#/$defs/instant" },
+    "candidate_4did": { "$ref": "common.json#/$defs/fourdid" }
+  },
+  "required": ["sensor_id", "source", "frame", "pose", "classification", "confidence", "evidence_hash", "expiry"],
+  "additionalProperties": false
+}

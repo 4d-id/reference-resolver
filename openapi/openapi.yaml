@@ -1,0 +1,234 @@
+openapi: 3.1.0
+info:
+  title: 4D-ID Access API
+  version: "2.3"
+  description: >
+    The REST binding of the Clause 10 access operations (Part 2, 10.1).
+    One semantic API, many bindings: these operations have the same meaning
+    over REST, gRPC, MCP, an agent-to-agent task, a ROS service, or an engine
+    plugin. This document is the REST binding; it is not normative.
+  license:
+    name: Apache-2.0
+    identifier: Apache-2.0
+servers:
+  - url: https://example.org/4did/v2.3
+tags:
+  - name: access
+    description: Clause 10 operations
+paths:
+  /resolve:
+    get:
+      operationId: resolve
+      tags: [access]
+      summary: Resolve an external identifier or a 4D-ID to its 4D-ID and current locator.
+      parameters:
+        - { name: registry, in: query, schema: { type: string } }
+        - { name: external_id, in: query, schema: { type: string } }
+        - { name: id, in: query, schema: { $ref: "#/components/schemas/fourdid" } }
+      responses:
+        "200":
+          description: Resolved.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { $ref: "#/components/schemas/fourdid" }
+                  locator: { type: string }
+                  snapshot_id: { type: string }
+                required: [id, locator, snapshot_id]
+        "404": { description: Signed negative. }
+  /entity/{id}:
+    get:
+      operationId: get_entity
+      tags: [access]
+      summary: Stable metadata for an entity.
+      parameters:
+        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/entity" } } }
+  /entity/{id}/state:
+    get:
+      operationId: get_state
+      tags: [access]
+      summary: Current 4D-State, or state at a past instant where history is claimed.
+      parameters:
+        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: at, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/state" } } }
+  /entity/{id}/relations:
+    get:
+      operationId: get_relations
+      tags: [access]
+      parameters:
+        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: type, in: query, schema: { type: string } }
+        - { name: direction, in: query, schema: { type: string, enum: [out, in, both] } }
+        - { name: at, in: query, schema: { type: string, format: date-time } }
+        - { name: min_confidence, in: query, schema: { type: number } }
+        - { name: depth, in: query, schema: { type: integer } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/relation" } }
+  /query:
+    post:
+      operationId: query
+      tags: [access]
+      summary: Entities by cell and time.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cells: { type: array, items: { type: string } }
+                interval: { type: array, items: { type: string, format: date-time }, minItems: 2, maxItems: 2 }
+                layer: { type: string }
+                class: { type: string }
+              required: [cells]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/state" } }
+  /events:
+    post:
+      operationId: query_events
+      tags: [access]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                subject: { $ref: "#/components/schemas/fourdid" }
+                cells: { type: array, items: { type: string } }
+                interval: { type: array, items: { type: string, format: date-time }, minItems: 2, maxItems: 2 }
+                class: { type: string }
+                min_confidence: { type: number }
+              required: [interval]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/state" } }
+  /transform:
+    get:
+      operationId: transform
+      tags: [access]
+      parameters:
+        - { name: from, in: query, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: to, in: query, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: at, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  matrix: { type: array, items: { type: number }, minItems: 16, maxItems: 16 }
+                  uncertainty: { $ref: "#/components/schemas/uncertainty" }
+                required: [matrix]
+  /entity/{id}/representations:
+    get:
+      operationId: get_representations
+      tags: [access]
+      summary: Representations ranked for a declared purpose, subject to credentials, license, tier, validity.
+      parameters:
+        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: purpose, in: query, required: true, schema: { type: string, enum: [rendering, measurement, localization, agent-context, remote-viewing] } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/relation" } }
+  /snapshot:
+    get:
+      operationId: get_snapshot
+      tags: [access]
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/snapshot" } } }
+  /list:
+    post:
+      operationId: list
+      tags: [access]
+      summary: State across cells at a snapshot (list half of list-then-watch).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cells: { type: array, items: { type: string } }
+                snapshot_id: { type: string }
+              required: [cells, snapshot_id]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { type: array, items: { $ref: "#/components/schemas/state" } }
+  /watch:
+    get:
+      operationId: watch
+      tags: [access]
+      summary: Changes after a generation or snapshot (server-sent events in this binding).
+      parameters:
+        - { name: cells, in: query, schema: { type: string } }
+        - { name: id, in: query, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: since, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: A stream of 4D-State changes with drop indicators.
+          content: { text/event-stream: { schema: { type: string } } }
+  /entity/{id}/context:
+    get:
+      operationId: context
+      tags: [access]
+      summary: A bounded, deterministic context envelope for an agent.
+      parameters:
+        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+        - { name: fields, in: query, schema: { type: string, description: "Comma-separated field selection." } }
+        - { name: max_entities, in: query, schema: { type: integer } }
+        - { name: max_bytes, in: query, schema: { type: integer } }
+        - { name: snapshot_id, in: query, schema: { type: string } }
+      responses:
+        "200":
+          description: OK
+          content: { application/json: { schema: { $ref: "#/components/schemas/envelope" } } }
+components:
+  schemas:
+    fourdid: { $ref: "../schemas/common.json#/$defs/fourdid" }
+    uncertainty: { $ref: "../schemas/common.json#/$defs/uncertainty" }
+    relation: { $ref: "../schemas/common.json#/$defs/relation" }
+    state: { $ref: "../schemas/state.json" }
+    snapshot: { $ref: "../schemas/snapshot.json" }
+    envelope: { $ref: "../schemas/envelope.json" }
+    entity:
+      type: object
+      description: Stable metadata (get_entity).
+      properties:
+        id: { $ref: "../schemas/common.json#/$defs/fourdid" }
+        parent: { $ref: "../schemas/common.json#/$defs/fourdid" }
+        motion_mode: { type: string }
+        status: { type: string }
+        layer: { type: string }
+        lease: { type: string, format: date-time }
+        labels: { type: array, items: { $ref: "../schemas/common.json#/$defs/label" } }
+        relations: { type: array, items: { $ref: "../schemas/common.json#/$defs/relation" } }
+      required: [id]

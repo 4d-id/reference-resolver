@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://4did.org/schemas/2.3/state.json",
+  "title": "4D-State",
+  "description": "A record describing one entity at one moment (Part 1, 7.3).",
+  "type": "object",
+  "properties": {
+    "id": { "$ref": "common.json#/$defs/fourdid" },
+    "parent": { "$ref": "common.json#/$defs/fourdid" },
+    "anchor": { "$ref": "common.json#/$defs/anchor" },
+    "pose": { "$ref": "common.json#/$defs/pose" },
+    "time": {
+      "type": "object",
+      "properties": {
+        "source": { "$ref": "common.json#/$defs/instant" },
+        "bound_s": { "type": "number", "minimum": 0, "description": "Source-time uncertainty bound (Part 1, 7.4)." },
+        "publish": { "$ref": "common.json#/$defs/instant" }
+      },
+      "required": ["source", "publish"],
+      "additionalProperties": false
+    },
+    "sequence": { "type": "integer", "minimum": 0, "description": "Per-producer, monotonic per 4D-ID (Part 1, 7.4)." },
+    "producer": { "type": "string" },
+    "validity_s": { "type": "number", "minimum": 0 },
+    "status": { "type": "string", "enum": ["provisional", "active", "offline_active", "lost_contact", "unanchored", "merged", "terminal"] },
+    "motion_mode": { "type": "string", "enum": ["static", "physical", "teleportable"] },
+    "layer": { "type": "string" },
+    "lease": { "$ref": "common.json#/$defs/instant" },
+    "generation": { "type": "integer", "minimum": 0 },
+    "priority": { "type": "integer", "description": "Authority-granted (Part 4, 13.2)." },
+    "discontinuity_of": { "type": "integer", "description": "Prior sequence number a teleport references (Part 1, 7.5)." },
+    "derivation_of": { "$ref": "common.json#/$defs/fourdid" },
+    "disclosure_policy": { "type": "string" },
+    "uncertainty": { "$ref": "common.json#/$defs/uncertainty" },
+    "provenance": { "$ref": "common.json#/$defs/provenance" },
+    "labels": { "type": "array", "items": { "$ref": "common.json#/$defs/label" } },
+    "relations": { "type": "array", "items": { "$ref": "common.json#/$defs/relation" } },
+    "ext": {
+      "type": "object",
+      "description": "Optional extension payloads (Part 2).",
+      "properties": {
+        "motion": {
+          "type": "object",
+          "properties": {
+            "velocity": { "$ref": "common.json#/$defs/vec3" },
+            "angular_velocity": { "$ref": "common.json#/$defs/vec3" },
+            "acceleration": { "$ref": "common.json#/$defs/vec3" },
+            "confidence": { "$ref": "common.json#/$defs/confidence" }
+          },
+          "additionalProperties": false
+        },
+        "semantics": {
+          "type": "object",
+          "properties": {
+            "class": { "type": "string" },
+            "affordances": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["collidable", "walkable", "sittable", "graspable", "occluder", "openable", "hazardous", "structural", "immovable", "localization"] }
+            },
+            "hull": {
+              "type": "object",
+              "properties": { "half_extents_m": { "$ref": "common.json#/$defs/vec3" } },
+              "additionalProperties": true
+            },
+            "state": { "type": "string" },
+            "localization_quality": { "$ref": "common.json#/$defs/confidence" },
+            "provenance": { "$ref": "common.json#/$defs/provenance" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "required": ["id", "parent", "anchor", "pose", "time", "sequence", "producer", "validity_s"],
+  "additionalProperties": false
+}

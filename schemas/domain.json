@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://4did.org/schemas/2.3/domain.json",
+  "title": "Domain",
+  "description": "A root frame with its own grid, clock, and authority (Part 5, 17.1).",
+  "type": "object",
+  "properties": {
+    "id": { "$ref": "common.json#/$defs/fourdid" },
+    "grid": { "type": "string", "description": "DGGS variant for Earth; oct or a documented synthetic grid otherwise." },
+    "mode": { "type": "string", "enum": ["real", "replica", "scenario", "generated"] },
+    "extent_policy": { "type": "string", "enum": ["fixed", "growing"] },
+    "time_mapping": {
+      "type": "object",
+      "properties": {
+        "rate": { "type": "number", "description": "Realm time per wall time; 0 paused, negative replay." },
+        "offset_s": { "type": "number" }
+      },
+      "required": ["rate"],
+      "additionalProperties": false
+    },
+    "instance_of": { "$ref": "common.json#/$defs/fourdid" },
+    "derived_from": { "$ref": "common.json#/$defs/fourdid", "description": "Required for scenario mode." },
+    "authority": { "type": "string" },
+    "lease": { "$ref": "common.json#/$defs/instant" },
+    "provenance": { "$ref": "common.json#/$defs/provenance" }
+  },
+  "required": ["id", "grid", "mode", "extent_policy", "time_mapping", "authority"],
+  "allOf": [
+    { "if": { "properties": { "mode": { "const": "scenario" } } }, "then": { "required": ["derived_from"] } }
+  ],
+  "additionalProperties": false
+}

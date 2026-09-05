@@ -1,0 +1,57 @@
+{
+  "note": "Sample data for a port terminal. Property-neutral. Used by the validator and the quickstart.",
+  "states": [
+    {
+      "id": "4did:h3:8a2830828a37fff:BLDa1B2c3D4e5F6g7H8i9J0",
+      "parent": "4did:h3:8a2830828a37fff:PCLz9Y8x7W6v5U4t3S2r1Q0",
+      "anchor": { "variant": "h3", "cell": "8a2830828a37fff", "resolution": 10 },
+      "pose": { "position": [0, 0, 0], "orientation": [0, 0, 0, 1] },
+      "time": { "source": "2026-09-04T12:00:00Z", "bound_s": 0.01, "publish": "2026-09-04T12:00:00Z" },
+      "sequence": 1,
+      "producer": "twin:terminal",
+      "validity_s": 86400,
+      "status": "active",
+      "motion_mode": "static",
+      "layer": "public",
+      "generation": 3,
+      "labels": [ { "text": "Terminal B warehouse", "lang": "en", "source": "operator" } ],
+      "relations": [
+        { "type": "identified_as", "registry": "asset.register", "external_id": "TB-WH-01", "confidence": 1.0 },
+        { "type": "represents", "target": "4did:h3:8a2830828a37fff:TILa1a2a3a4a5a6a7a8a9a0", "kind": "tileset", "lod": "exterior", "captured": "2026-03-01T00:00:00Z", "license": "vendor:stream-only", "provenance": { "tier": "navigational", "rms_m": 0.4 } }
+      ]
+    },
+    {
+      "id": "4did:h3:8a2830828a37fff:AGVq1w2e3r4t5y6u7i8o9p0",
+      "parent": "4did:h3:8a2830828a37fff:BLDa1B2c3D4e5F6g7H8i9J0",
+      "anchor": { "variant": "h3", "cell": "8a2830828a37fff", "resolution": 10 },
+      "pose": { "position": [12.417, 0.0, -3.884], "orientation": [0, 0.7071068, 0, 0.7071068] },
+      "time": { "source": "2026-09-04T17:22:41.183Z", "bound_s": 0.004, "publish": "2026-09-04T17:22:41.201Z" },
+      "sequence": 48211,
+      "producer": "agv:fleet-b:07",
+      "validity_s": 0.5,
+      "status": "active",
+      "motion_mode": "physical",
+      "layer": "public",
+      "generation": 1,
+      "uncertainty": { "position_cov_upper": [0.0004, 0, 0, 0.0004, 0, 0.0009], "orientation_sigma_rad": 0.004, "confidence": 0.93 },
+      "provenance": { "method": "lidar-slam", "rms_m": 0.011, "tier": "metric", "registered": "2026-09-04T17:20:00Z" },
+      "ext": {
+        "motion": { "velocity": [0.8, 0.0, -0.2], "confidence": 0.91 },
+        "semantics": { "class": "vehicle:agv", "affordances": ["collidable", "immovable"], "hull": { "half_extents_m": [1.2, 0.9, 0.6] } }
+      }
+    }
+  ],
+  "domains": [
+    {
+      "id": "4did:oct:SCNa1b2c3d4e5f6g7h8i9j0k:ROOTa1b2c3d4e5f6g7h8i9j",
+      "grid": "oct",
+      "mode": "scenario",
+      "extent_policy": "fixed",
+      "time_mapping": { "rate": 0 },
+      "derived_from": "4did:h3:8a2830828a37fff:BLDa1B2c3D4e5F6g7H8i9J0",
+      "authority": "planner:layout",
+      "lease": "2026-12-31T00:00:00Z",
+      "provenance": { "model": "layout-tool-1" }
+    }
+  ]
+}
