@@ -28,9 +28,15 @@ export function parse4did(id) {
 function mintDescriptor() {
   return Buffer.from(randomUUID().replace(/-/g, ""), "hex").toString("base64url");
 }
-export function mint4did(variant, cell, { vref = null, domain = null } = {}) {
+export function mint4did(variant, cell, { vref = null, domain = null, genesis = null } = {}) {
   const cellPart = domain ? `${domain}.${cell}` : cell;
-  return `4did:${variant}:${cellPart}${vref ? `;v=${vref}` : ""}:${mintDescriptor()}`;
+  const g = genesis ? `:${genesis}` : "";
+  return `4did:${variant}:${cellPart}${vref ? `;v=${vref}` : ""}:${mintDescriptor()}${g}`;
+}
+// format a Date as a 4D-ID genesis marker: 20260904T141500Z
+export function genesisMarker(d = new Date()) {
+  const p = n => String(n).padStart(2,"0");
+  return `${d.getUTCFullYear()}${p(d.getUTCMonth()+1)}${p(d.getUTCDate())}T${p(d.getUTCHours())}${p(d.getUTCMinutes())}${p(d.getUTCSeconds())}Z`;
 }
 
 const ZONE_RES = 6;
@@ -72,9 +78,19 @@ export class Resolver {
     let target = id;
     if (!target && registry && external_id) target = this.store.srcByExternal(registry, external_id);
     if (!target) return null;
-    const e = this._row(target);
+    let e = this._row(target);
     if (!e) return null;
-    return { id: e.id, locator: e.zone, snapshot_id: this._snapshotId() };
+    // follow merge redirects to the surviving identity (bounded)
+    let hops = 0, redirectedFrom = null;
+    while (e && e.status === "merged" && e.merged_into && hops++ < 16) {
+      redirectedFrom = e.id;
+      const nx = this._row(e.merged_into);
+      if (!nx) break;
+      e = nx;
+    }
+    const out = { id: e.id, locator: e.zone, snapshot_id: this._snapshotId() };
+    if (redirectedFrom) out.redirected_from = redirectedFrom;
+    return out;
   }
 
   get_entity(id) {
@@ -148,6 +164,78 @@ export class Resolver {
       const z = zoneOf(s.anchor);
       return set.size === 0 || set.has(z) || [...set].some((c) => z.startsWith(c));
     });
+  }
+
+  // ---- reconciliation (Part 4, 15.2) ----
+
+  // propose a candidate match between two identities with a confidence and provenance.
+  // returns a candidate record; does not merge (automation proposes, authority promotes).
+  proposeMatch(idA, idB, { confidence, by = "matcher", method = "spatial+class", evidence = [] }) {
+    const a = this._row(idA), b = this._row(idB);
+    if (!a || !b) throw new Error("both identities must exist to propose a match");
+    const cand = { kind: "match-candidate", a: idA, b: idB, confidence, by, method, evidence, at: new Date().toISOString() };
+    this.store.addCandidate(cand);
+    return cand;
+  }
+
+  listCandidates() { return this.store.candidates(); }
+
+  // promote a candidate into a merge, authenticated by an authority.
+  // survivor = earlier genesis marker; loser -> merged, redirects, keeps derivation.
+  merge(idA, idB, { authority, reason = "reconciled" } = {}) {
+    if (!authority) throw new Error("merge requires an authenticated authority (12.1)");
+    const a = this._row(idA), b = this._row(idB);
+    if (!a || !b) throw new Error("both identities must exist");
+    const genA = this._genesisMs(idA), genB = this._genesisMs(idB);
+    const [survivor, loser] = genA <= genB ? [a, b] : [b, a];
+    const sState = JSON.parse(survivor.state_json), lState = JSON.parse(loser.state_json);
+    // survivor absorbs the loser's external ids and observation relations (derivation preserved)
+    const merged = new Set((sState.relations || []).map(r => JSON.stringify(r)));
+    for (const r of (lState.relations || [])) {
+      if (r.type === "identified_as" || r.type === "observed_by" || r.type === "represents") merged.add(JSON.stringify(r));
+    }
+    sState.relations = [...merged].map(x => JSON.parse(x));
+    sState.relations.push({ type: "derived_from", target: loser.id, note: "merge:"+reason, confidence: 1 });
+    sState.provenance = Object.assign({}, sState.provenance, { merge_authority: authority, merged_at: new Date().toISOString() });
+    sState.sequence = (sState.sequence || 0) + 1;
+    this.putState(sState);
+    // rewire the loser's external ids to point at the survivor, and mark it merged+redirect
+    this.store.reindexExternalTo(loser.id, survivor.id);
+    this.store.setMerged(loser.id, survivor.id);
+    this.store.recordHistory({ kind: "merge", survivor: survivor.id, merged: loser.id, authority, reason, at: new Date().toISOString() });
+    return { survivor: survivor.id, merged: loser.id };
+  }
+
+  // split one identity into new identities, each derived from the original (Part 4, 15.2)
+  split(id, parts, { authority } = {}) {
+    if (!authority) throw new Error("split requires an authenticated authority (12.1)");
+    const e = this._row(id); if (!e) throw new Error("identity must exist");
+    const s = JSON.parse(e.state_json);
+    const created = [];
+    for (const p of parts) {
+      const child = JSON.parse(JSON.stringify(s));
+      const m = mint4did("h3", s.anchor.cell, { vref: p.vref });
+      child.id = m; child.sequence = 1;
+      child.relations = [{ type: "derived_from", target: id, note: "split", confidence: 1 },
+                         ...(p.relations || [])];
+      if (p.label) child.labels = [{ text: p.label, source: "split" }];
+      this.putState(child); created.push(child.id);
+    }
+    this.store.recordHistory({ kind: "split", from: id, into: created, authority, at: new Date().toISOString() });
+    return { from: id, into: created };
+  }
+
+  mergeHistory(id) { return this.store.reconHistory().filter(h => h.survivor === id || h.merged === id || h.from === id || (h.into||[]).includes(id)); }
+
+  _genesisMs(id) {
+    const p = parse4did(id);
+    if (p.genesis) { // 8DIGIT T 6DIGIT
+      const t = p.genesis; const iso = `${t.slice(0,4)}-${t.slice(4,6)}-${t.slice(6,8)}T${t.slice(9,11)}:${t.slice(11,13)}:${t.slice(13,15)}Z`;
+      const ms = Date.parse(iso); if (!isNaN(ms)) return ms;
+    }
+    // UUIDv7 descriptor: first 48 bits are ms timestamp
+    try { const raw = Buffer.from(p.local.replace(/-/g,"+").replace(/_/g,"/"), "base64"); if (raw.length >= 6) return raw.readUIntBE(0,6); } catch {}
+    return Number.MAX_SAFE_INTEGER; // unknown genesis sorts last (never wins survivor)
   }
 
   context(id, { fields, max_entities = 32, max_bytes = 16384, snapshot_id } = {}) {

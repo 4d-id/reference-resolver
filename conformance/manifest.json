@@ -1,6 +1,6 @@
 {
   "note": "Phase 1 skeleton, generated from the 2.3 spec Annex A tables. 'schema' = a schema-level (D) check is wired now; 'todo' = awaits the reference resolver (Phase 2+).",
-  "version": "2.3",
+  "version": "2.4",
   "tests": [
     {
       "id": "/conf/core/strict-tree",
@@ -390,12 +390,12 @@
     {
       "id": "/conf/lifecycle/merge",
       "method": "F",
-      "status": "todo"
+      "status": "pass"
     },
     {
       "id": "/conf/lifecycle/split",
       "method": "F",
-      "status": "todo"
+      "status": "pass"
     },
     {
       "id": "/conf/lifecycle/lease",
@@ -534,6 +534,31 @@
     },
     {
       "id": "/conf/presentation/overlay-confidence",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/genesis-privacy",
+      "method": "DF",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/core/reconciliation",
+      "method": "I",
+      "status": "pass"
+    },
+    {
+      "id": "/conf/fabric/conferred-authority",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/overlapping-authority",
+      "method": "F",
+      "status": "todo"
+    },
+    {
+      "id": "/conf/fabric/dispute",
       "method": "F",
       "status": "todo"
     }

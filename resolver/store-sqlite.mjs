@@ -10,7 +10,7 @@ export class SqliteStore {
       CREATE TABLE IF NOT EXISTS entity (
         id TEXT PRIMARY KEY, parent TEXT, zone TEXT, home_zone TEXT,
         motion_mode TEXT, status TEXT, layer TEXT, lease TEXT,
-        state_json TEXT, sequence INTEGER, generation INTEGER, updated TEXT
+        state_json TEXT, sequence INTEGER, generation INTEGER, updated TEXT, merged_into TEXT
       );
       CREATE INDEX IF NOT EXISTS idx_entity_zone ON entity(zone);
       CREATE TABLE IF NOT EXISTS relation (
@@ -22,7 +22,22 @@ export class SqliteStore {
       CREATE TABLE IF NOT EXISTS zone_gen (zone TEXT PRIMARY KEY, generation INTEGER);
       CREATE TABLE IF NOT EXISTS history (id TEXT, sequence INTEGER, source TEXT, state_json TEXT);
       CREATE INDEX IF NOT EXISTS idx_hist ON history(id, source);
+      CREATE TABLE IF NOT EXISTS recon (kind TEXT, survivor TEXT, merged TEXT, from_id TEXT, into_json TEXT, authority TEXT, reason TEXT, at TEXT);
+      CREATE TABLE IF NOT EXISTS candidate (cand_json TEXT);
     `);
+    const cols = this.db.prepare("PRAGMA table_info(entity)").all().map((c) => c.name);
+    if (!cols.includes("merged_into")) this.db.prepare("ALTER TABLE entity ADD COLUMN merged_into TEXT").run();
+  }
+  // reconciliation support
+  addCandidate(c) { this.db.prepare("INSERT INTO candidate(cand_json) VALUES(?)").run(JSON.stringify(c)); }
+  candidates() { return this.db.prepare("SELECT cand_json FROM candidate").all().map((r) => JSON.parse(r.cand_json)); }
+  recordHistory(h) { this.db.prepare("INSERT INTO recon(kind,survivor,merged,from_id,into_json,authority,reason,at) VALUES(?,?,?,?,?,?,?,?)").run(h.kind ?? null, h.survivor ?? null, h.merged ?? null, h.from ?? null, h.into ? JSON.stringify(h.into) : null, h.authority ?? null, h.reason ?? null, h.at ?? null); }
+  reconHistory() { return this.db.prepare("SELECT kind,survivor,merged,from_id AS from,into_json,authority,reason,at FROM recon").all().map((r) => ({ ...r, into: r.into_json ? JSON.parse(r.into_json) : undefined, into_json: undefined })); }
+  reindexExternalTo(fromId, toId) {
+    this.db.prepare("UPDATE relation SET src=? WHERE src=? AND type='identified_as'").run(toId, fromId);
+  }
+  setMerged(loserId, survivorId) {
+    this.db.prepare("UPDATE entity SET status='merged', merged_into=?, state_json=json_set(state_json,'$.status','merged','$.merged_into',?) WHERE id=?").run(survivorId, survivorId, loserId);
   }
   bumpZone(zone) {
     const row = this.db.prepare("SELECT generation FROM zone_gen WHERE zone=?").get(zone);

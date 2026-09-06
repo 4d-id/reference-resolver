@@ -39,7 +39,21 @@ curl "localhost:4141/entity/<4did>/representations?purpose=rendering"
 curl "localhost:4141/watch?cells=<zone>&since=0"
 ```
 
-`resolve` is a **lookup**, not a mint: it finds an identity that was already registered. To create identities, `POST /ingest` (blocked in read-only deployments), or try the [live demos](https://x4d-id.exe.xyz/) which mint client-side.
+`resolve` is a **lookup**, not a mint: it finds an identity that was already registered. To create identities, `POST /ingest` (blocked in read-only deployments), or try the [live demos](https://4d-id.org/demos.html) which mint client-side.
+
+## Reconciliation: two systems, one thing
+
+Two independent observers can mint different identities for the same real-world object. This resolver implements cross-observer identity reconciliation (Part 4, §15.2): automation **proposes** a match with a confidence and evidence; an authenticated authority **promotes** it; the earlier-genesis identity survives while the loser redirects and keeps its derivation. Resolving the loser's id follows the merge to the survivor (`redirected_from`), and shared external identifiers re-point to the survivor.
+
+```bash
+curl -X POST localhost:4141/reconcile/propose -H 'content-type: application/json' \
+  -d '{"a":"<4did-a>","b":"<4did-b>","confidence":0.94,"by":"reconciler:spatial","method":"tag+iou","evidence":["same asset.tag","0.1m apart"]}'
+curl -X POST localhost:4141/reconcile/merge   -H 'content-type: application/json' \
+  -d '{"a":"<4did-a>","b":"<4did-b>","authority":"warehouse-ops:signed"}'
+curl "localhost:4141/entity/<4did-a>/merge-history"
+```
+
+`POST /reconcile/split` is the inverse: one identity becomes several, each derived from the original. Try the interactive walkthrough at [4d-id.org/reconcile.html](https://4d-id.org/reconcile.html).
 
 ## Configuration
 
@@ -53,14 +67,14 @@ curl "localhost:4141/watch?cells=<zone>&since=0"
 ## Test
 
 ```bash
-npm test    # schema validation + resolver smoke + HTTP end-to-end + conformance
+npm test    # schema validation + resolver smoke + HTTP end-to-end + conformance + reconciliation
 ```
 
 The conformance run reports how many of the specification's tests pass. Fifteen execute at schema level today; the rest are functional tests that fill in as the resolver gains propagation, security, and domain behaviour. See the [conformance manifest](conformance/manifest.json).
 
 ## What it implements
 
-`core`, `fabric` (zones, home register, resolution), `lifecycle` basics, and the `scale` subset for snapshots and list-then-watch, over the Clause 10 access operations. Identifier parse and mint, H3 anchoring, generation counters, and the context envelope are all here.
+`core`, `fabric` (zones, home register, resolution), `lifecycle` basics (including merge/split reconciliation with genesis markers), and the `scale` subset for snapshots and list-then-watch, over the Clause 10 access operations. Identifier parse and mint, H3 anchoring, generation counters, and the context envelope are all here.
 
 ## License
 

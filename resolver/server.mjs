@@ -29,6 +29,12 @@ export async function createServer({ seed = true, store } = {}) {
   app.get("/watch", (req, res) => send(res, R.watch({ cells: req.query.cells ? [req.query.cells] : undefined, id: req.query.id, since: req.query.since })));
   app.get("/entity/:id/context", (req, res) => send(res, R.context(req.params.id, { fields: req.query.fields, max_entities: req.query.max_entities != null ? Number(req.query.max_entities) : undefined, max_bytes: req.query.max_bytes != null ? Number(req.query.max_bytes) : undefined, snapshot_id: req.query.snapshot_id })));
   app.post("/ingest", (req, res) => { try { res.json(R.putState(req.body)); } catch (e) { res.status(400).json({ error: e.message }); } });
+  // ---- reconciliation (Part 4, 15.2) ----
+  app.post("/reconcile/propose", (req, res) => { try { const { a, b, ...opts } = req.body || {}; res.json(R.proposeMatch(a, b, opts)); } catch (e) { res.status(400).json({ error: e.message }); } });
+  app.get("/reconcile/candidates", (_req, res) => res.json(R.listCandidates()));
+  app.post("/reconcile/merge", (req, res) => { try { const { a, b, ...opts } = req.body || {}; res.json(R.merge(a, b, opts)); } catch (e) { res.status(400).json({ error: e.message }); } });
+  app.post("/reconcile/split", (req, res) => { try { const { id, parts, ...opts } = req.body || {}; res.json(R.split(id, parts, opts)); } catch (e) { res.status(400).json({ error: e.message }); } });
+  app.get("/entity/:id/merge-history", (req, res) => res.json(R.mergeHistory(req.params.id)));
 
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
   app.get("/", (_req, res) => res.json({ service: "4D-ID reference resolver", version: "2.3", store: R.store.constructor.name, zone_resolution: 6 }));

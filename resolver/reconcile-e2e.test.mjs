@@ -1,0 +1,24 @@
+import { createServer } from "./server.mjs";
+import { mint4did, genesisMarker } from "./core.mjs";
+const { app, R } = await createServer({ seed:false });
+const srv = app.listen(0); const base = `http://localhost:${srv.address().port}`;
+const J = async (m,p,b) => { const r = await fetch(base+p,{method:m,headers:{"content-type":"application/json"},body:b?JSON.stringify(b):undefined}); return {ok:r.ok, body: await r.json().catch(()=>null)}; };
+let fail=0; const t=(n,c)=>{console.log(`  ${c?"ok  ":"FAIL"} ${n}`); if(!c) fail++;};
+const now=()=>new Date().toISOString(); const cell="8c2a100d2d0dbff";
+const idA=mint4did("h3",cell,{genesis:genesisMarker(new Date(Date.now()-60000))});
+const idB=mint4did("h3",cell,{genesis:genesisMarker()});
+for (const [id,prod] of [[idA,"robot:A"],[idB,"vision:B"]])
+  await J("POST","/ingest",{id,anchor:{variant:"h3",cell,resolution:12},pose:{position:[10,2,0]},time:{source:now(),publish:now()},sequence:1,producer:prod,status:"active",motion_mode:"physical",relations:[{type:"identified_as",registry:"asset.tag",external_id:"FORKLIFT-42"}]});
+const prop=await J("POST","/reconcile/propose",{a:idA,b:idB,confidence:0.94,by:"reconciler",method:"tag+iou"});
+t("propose over HTTP", prop.ok && prop.body.confidence===0.94);
+t("candidates listed", (await J("GET","/reconcile/candidates")).body.length===1);
+const merge=await J("POST","/reconcile/merge",{a:idA,b:idB,authority:"ops:signed"});
+t("merge over HTTP picks earlier survivor", merge.ok && merge.body.survivor===idA);
+const viaB=await J("GET",`/resolve?id=${encodeURIComponent(idB)}`);
+t("loser redirects to survivor", viaB.body.id===idA && viaB.body.redirected_from===idB);
+const viaTag=await J("GET","/resolve?registry=asset.tag&external_id=FORKLIFT-42");
+t("external id resolves to survivor", viaTag.body.id===idA);
+const hist=await J("GET",`/entity/${encodeURIComponent(idA)}/merge-history`);
+t("merge history over HTTP", hist.body.some(h=>h.kind==="merge"&&h.authority==="ops:signed"));
+srv.close();
+console.log(`\n${fail?"FAIL":"PASS"}: ${fail} problem(s).`); process.exit(fail?1:0);

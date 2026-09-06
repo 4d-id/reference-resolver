@@ -12,6 +12,9 @@ export class MemoryStore {
     this.extIndex = new Map();    // registry\x00external_id -> src
     this.zoneGen = new Map();     // zone -> generation
     this.history = [];            // { id, sequence, source, state_json }
+    this.recon = [];              // merge/split history events
+    this.cand = [];               // match candidates
+    this.merged = new Map();      // loser id -> survivor id
   }
   bumpZone(zone) {
     const g = (this.zoneGen.get(zone) ?? 0) + 1;
@@ -34,6 +37,20 @@ export class MemoryStore {
   allEntities() { return [...this.entity.values()]; }
   entitiesGenAbove(gen) { return this.allEntities().filter((e) => e.generation > gen); }
   zones() { return [...this.zoneGen.entries()].map(([zone, generation]) => ({ zone, generation })).sort((a, b) => a.zone < b.zone ? -1 : 1); }
+  // reconciliation support
+  addCandidate(c) { this.cand.push(c); }
+  candidates() { return this.cand; }
+  recordHistory(h) { this.recon.push(h); }
+  reconHistory() { return this.recon; }
+  reindexExternalTo(fromId, toId) {
+    for (const [k, v] of this.extIndex) if (v === fromId) this.extIndex.set(k, toId);
+    // also move the relations' external ids conceptually; index is what resolve uses
+  }
+  setMerged(loserId, survivorId) {
+    this.merged.set(loserId, survivorId);
+    const row = this.entity.get(loserId);
+    if (row) { row.status = "merged"; row.merged_into = survivorId; this.entity.set(loserId, row); }
+  }
   stateAt(id, at) {
     const rows = this.history.filter((h) => h.id === id && (!at || (h.source && h.source <= at))).sort((a, b) => (a.source < b.source ? -1 : 1));
     return rows.length ? rows[rows.length - 1].state_json : null;

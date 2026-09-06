@@ -14,7 +14,7 @@
     "conformance": "node conformance/run.mjs",
     "conformance:list": "node scripts/conformance.mjs",
     "serve": "node resolver/server.mjs",
-    "test": "npm run validate && npm run smoke && npm run e2e && npm run conformance"
+    "test": "npm run validate && npm run smoke && npm run e2e && npm run conformance && node resolver/reconciliation.test.mjs && node resolver/reconcile-e2e.test.mjs"
   },
   "dependencies": {
     "express": "^5.2.1",

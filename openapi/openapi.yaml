@@ -36,6 +36,7 @@ paths:
                   id: { $ref: "#/components/schemas/fourdid" }
                   locator: { type: string }
                   snapshot_id: { type: string }
+                  redirected_from: { $ref: "#/components/schemas/fourdid", description: "Present when the queried id was merged into the survivor." }
                 required: [id, locator, snapshot_id]
         "404": { description: Signed negative. }
   /entity/{id}:
@@ -211,6 +212,80 @@ paths:
         "200":
           description: OK
           content: { application/json: { schema: { $ref: "#/components/schemas/envelope" } } }
+  /reconcile/propose:
+    post:
+      operationId: propose_match
+      tags: [reconciliation]
+      summary: Propose a candidate match between two identities (automation proposes; does not merge).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                a: { $ref: "#/components/schemas/fourdid" }
+                b: { $ref: "#/components/schemas/fourdid" }
+                confidence: { type: number }
+                by: { type: string }
+                method: { type: string }
+                evidence: { type: array, items: { type: string } }
+              required: [a, b]
+      responses:
+        "200": { description: Candidate recorded. }
+        "400": { description: Invalid request. }
+  /reconcile/candidates:
+    get:
+      operationId: list_candidates
+      tags: [reconciliation]
+      summary: List proposed match candidates.
+      responses:
+        "200": { description: OK }
+  /reconcile/merge:
+    post:
+      operationId: merge
+      tags: [reconciliation]
+      summary: Authenticated authority promotes a match. Earlier-genesis survives; loser redirects.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                a: { $ref: "#/components/schemas/fourdid" }
+                b: { $ref: "#/components/schemas/fourdid" }
+                authority: { type: string }
+                reason: { type: string }
+              required: [a, b, authority]
+      responses:
+        "200": { description: Merge applied; survivor and merged ids returned. }
+        "400": { description: Missing authority or unknown identity. }
+  /reconcile/split:
+    post:
+      operationId: split
+      tags: [reconciliation]
+      summary: Split one identity into several, each derived from the original.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id: { $ref: "#/components/schemas/fourdid" }
+                parts: { type: array, items: { type: object } }
+                authority: { type: string }
+              required: [id, parts, authority]
+      responses:
+        "200": { description: Split applied. }
+        "400": { description: Missing authority or unknown identity. }
+  /entity/{id}/merge-history:
+    get:
+      operationId: merge_history
+      tags: [reconciliation]
+      summary: The merge/split record for an identity.
+      parameters:
+        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+      responses:
+        "200": { description: OK }
 components:
   schemas:
     fourdid: { $ref: "../schemas/common.json#/$defs/fourdid" }
