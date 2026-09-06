@@ -180,10 +180,10 @@ export class Resolver {
 
   listCandidates() { return this.store.candidates(); }
 
-  // promote a candidate into a merge, authenticated by an authority.
+  // promote a candidate into an authority-attributed merge; deployment policy decides authorization.
   // survivor = earlier genesis marker; loser -> merged, redirects, keeps derivation.
   merge(idA, idB, { authority, reason = "reconciled" } = {}) {
-    if (!authority) throw new Error("merge requires an authenticated authority (12.1)");
+    if (!authority) throw new Error("merge requires an authority field (deployment policy authorizes)");
     const a = this._row(idA), b = this._row(idB);
     if (!a || !b) throw new Error("both identities must exist");
     const genA = this._genesisMs(idA), genB = this._genesisMs(idB);
@@ -208,7 +208,7 @@ export class Resolver {
 
   // split one identity into new identities, each derived from the original (Part 4, 15.2)
   split(id, parts, { authority } = {}) {
-    if (!authority) throw new Error("split requires an authenticated authority (12.1)");
+    if (!authority) throw new Error("split requires an authority field (deployment policy authorizes)");
     const e = this._row(id); if (!e) throw new Error("identity must exist");
     const s = JSON.parse(e.state_json);
     const created = [];

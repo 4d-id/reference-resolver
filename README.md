@@ -9,7 +9,9 @@ The reference implementation of the [4D-ID specification](https://github.com/4d-
 🗄️ **Storage:** pure-JS in-memory (default) or SQLite (`STORE=sqlite`).
 🌐 **Bindings:** REST today (matches `openapi/openapi.yaml`); MCP to follow.
 
-This resolver exists to prove the spec is buildable, to act as a conformance oracle, and to give you something to run behind the four-call quickstart. It is a reference, not a production service: single process, single store, no auth. The production shape (PostGIS, stateless behind the Part 4 architecture) is a separate build.
+4D-ID begins after grounding: this resolver does not perceive, localize, register, or render the world. It stores and resolves caller-supplied identities, grounding, state, and evidence. It is a reference, not a production service: single process, single store, no authentication. Deployment policy is outside this API.
+
+This resolver exists to prove the spec is buildable, to provide a reference target for the current conformance checks, and to give you something to run behind the four-call quickstart. The production shape (PostGIS, stateless behind the Part 4 architecture) is a separate build.
 
 ## Install and run
 
@@ -34,22 +36,22 @@ curl "localhost:4141/resolve?registry=asset.register&external_id=TB-WH-01"
 # a compact, agent-ready context envelope
 curl "localhost:4141/entity/<4did>/context"
 # the best representation for a purpose
-curl "localhost:4141/entity/<4did>/representations?purpose=rendering"
+curl "localhost:4141/entity/<4did>/representations?purpose=agent-context"
 # changes since a generation
 curl "localhost:4141/watch?cells=<zone>&since=0"
 ```
 
-`resolve` is a **lookup**, not a mint: it finds an identity that was already registered. To create identities, `POST /ingest` (blocked in read-only deployments), or try the [live demos](https://4d-id.org/demos.html) which mint client-side.
+`resolve` is a **lookup**, not a mint: it finds an identity already present in resolver records. Grounding and any external identifier mapping are supplied by the caller or deployment; this API does not perform perception or registration. To create identities, `POST /ingest` (blocked in read-only deployments), or try the [live demos](https://4d-id.org/demos.html), which create isolated sandbox records client-side.
 
 ## Reconciliation: two systems, one thing
 
-Two independent observers can mint different identities for the same real-world object. This resolver implements cross-observer identity reconciliation (Part 4, §15.2): automation **proposes** a match with a confidence and evidence; an authenticated authority **promotes** it; the earlier-genesis identity survives while the loser redirects and keeps its derivation. Resolving the loser's id follows the merge to the survivor (`redirected_from`), and shared external identifiers re-point to the survivor.
+Two systems can hold different identities for the same subject. This resolver implements cross-system identity reconciliation (Part 4, §15.2): an external matcher proposes a match and supplies confidence plus evidence; an authority-attributed operation records it, and deployment policy—not this unauthenticated API—determines whether that authority is authorized. The earlier-genesis identity survives while the other redirects and keeps its derivation. Resolving the redirected id follows the merge to the survivor (`redirected_from`), and shared external identifiers re-point to the survivor.
 
 ```bash
 curl -X POST localhost:4141/reconcile/propose -H 'content-type: application/json' \
-  -d '{"a":"<4did-a>","b":"<4did-b>","confidence":0.94,"by":"reconciler:spatial","method":"tag+iou","evidence":["same asset.tag","0.1m apart"]}'
+  -d '{"a":"<4did-a>","b":"<4did-b>","confidence":0.94,"by":"external-matcher:v1","method":"tag+proximity+class","evidence":["same asset.tag","0.1m apart"]}'
 curl -X POST localhost:4141/reconcile/merge   -H 'content-type: application/json' \
-  -d '{"a":"<4did-a>","b":"<4did-b>","authority":"warehouse-ops:signed"}'
+  -d '{"a":"<4did-a>","b":"<4did-b>","authority":"warehouse-ops:authorized"}'
 curl "localhost:4141/entity/<4did-a>/merge-history"
 ```
 
@@ -70,7 +72,7 @@ curl "localhost:4141/entity/<4did-a>/merge-history"
 npm test    # schema validation + resolver smoke + HTTP end-to-end + conformance + reconciliation
 ```
 
-The conformance run reports how many of the specification's tests pass. Fifteen execute at schema level today; the rest are functional tests that fill in as the resolver gains propagation, security, and domain behaviour. See the [conformance manifest](conformance/manifest.json).
+The conformance run reports exactly **15 schema-level checks passing** today; functional work continues as propagation, security, and domain behaviour are implemented. See the [conformance manifest](conformance/manifest.json).
 
 ## What it implements
 

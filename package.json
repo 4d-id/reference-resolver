@@ -1,7 +1,7 @@
 {
   "name": "@4did/spec-package",
   "version": "2.3.0",
-  "description": "4D-ID developer package: JSON Schema, OpenAPI, reference resolver, validator, and conformance runner.",
+  "description": "4D-ID reference resolver package: schemas, OpenAPI binding, validator, and conformance runner; no authentication.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {

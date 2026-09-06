@@ -4,9 +4,14 @@ info:
   version: "2.3"
   description: >
     The REST binding of the Clause 10 access operations (Part 2, 10.1).
-    One semantic API, many bindings: these operations have the same meaning
-    over REST, gRPC, MCP, an agent-to-agent task, a ROS service, or an engine
-    plugin. This document is the REST binding; it is not normative.
+    4D-ID begins after grounding: callers supply identities, grounding, state,
+    and evidence; this API does not perform perception, localization,
+    registration, or rendering. One semantic API, many bindings: these
+    operations have the same meaning over REST, gRPC, MCP, an agent-to-agent
+    task, a ROS service, or an engine plugin. This document is the REST
+    binding; it is not normative. The API has no authentication; an
+    authority field is descriptive, and deployment policy determines whether
+    an operation is authorized.
   license:
     name: Apache-2.0
     identifier: Apache-2.0
@@ -20,7 +25,7 @@ paths:
     get:
       operationId: resolve
       tags: [access]
-      summary: Resolve an external identifier or a 4D-ID to its 4D-ID and current locator.
+      summary: Resolve a caller-supplied external identifier or 4D-ID to its stored identity and current locator.
       parameters:
         - { name: registry, in: query, schema: { type: string } }
         - { name: external_id, in: query, schema: { type: string } }
@@ -146,7 +151,7 @@ paths:
     get:
       operationId: get_representations
       tags: [access]
-      summary: Representations ranked for a declared purpose, subject to credentials, license, tier, validity.
+      summary: Representations ranked for a downstream client purpose, subject to deployment policy, license, tier, and validity; the resolver returns metadata and does not render or localize.
       parameters:
         - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
         - { name: purpose, in: query, required: true, schema: { type: string, enum: [rendering, measurement, localization, agent-context, remote-viewing] } }
@@ -244,7 +249,7 @@ paths:
     post:
       operationId: merge
       tags: [reconciliation]
-      summary: Authenticated authority promotes a match. Earlier-genesis survives; loser redirects.
+      summary: Record an authority-attributed match. Earlier-genesis survives; loser redirects. The API has no authentication; deployment policy determines whether the supplied authority is authorized.
       requestBody:
         content:
           application/json:
@@ -263,7 +268,7 @@ paths:
     post:
       operationId: split
       tags: [reconciliation]
-      summary: Split one identity into several, each derived from the original.
+      summary: Record an authority-attributed split, authorized by deployment policy, with each result derived from the original.
       requestBody:
         content:
           application/json:
