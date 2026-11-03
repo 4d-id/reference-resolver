@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.4.0 — November 3, 2026
+- Reports implementation version 2.4.0 and specification compatibility 2.4.
+- Supports the non-spatial `id` identifier variant while preserving legacy spatial-form identifiers.
+- Spatial UUIDv4 minting now includes an explicit genesis marker; opaque privacy-mode identifiers omit place and time metadata.
+- Exact external identifier rebinding is rejected instead of silently overwriting an existing identity.
+- Reconciliation candidates require evidence, expire, and are returned through bounded reads. Merge decisions reference a current candidate and record a decision ID.
+- Authority fields remain attribution only. This resolver still has no authentication or production authorization policy.
+- Manifest coverage is stated precisely: 15 schema checks implemented of 112 targets defined.
+
 ## 0.4.0 — September 2026
 - Cross-observer identity reconciliation (Part 4, §15.2): `proposeMatch`, authority-attributed `merge` with merge-redirect `resolve`, `split`, and `mergeHistory`.
 - Genesis markers: `mint4did(..., {genesis})` and `genesisMarker()` make survivor selection deterministic; UUIDv7 timestamp is the fallback.

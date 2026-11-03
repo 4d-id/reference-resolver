@@ -22,17 +22,36 @@ export class SqliteStore {
       CREATE TABLE IF NOT EXISTS zone_gen (zone TEXT PRIMARY KEY, generation INTEGER);
       CREATE TABLE IF NOT EXISTS history (id TEXT, sequence INTEGER, source TEXT, state_json TEXT);
       CREATE INDEX IF NOT EXISTS idx_hist ON history(id, source);
-      CREATE TABLE IF NOT EXISTS recon (kind TEXT, survivor TEXT, merged TEXT, from_id TEXT, into_json TEXT, authority TEXT, reason TEXT, at TEXT);
+      CREATE TABLE IF NOT EXISTS recon (kind TEXT, survivor TEXT, merged TEXT, from_id TEXT, into_json TEXT, authority TEXT, reason TEXT, at TEXT, event_json TEXT);
       CREATE TABLE IF NOT EXISTS candidate (cand_json TEXT);
     `);
     const cols = this.db.prepare("PRAGMA table_info(entity)").all().map((c) => c.name);
     if (!cols.includes("merged_into")) this.db.prepare("ALTER TABLE entity ADD COLUMN merged_into TEXT").run();
+    const reconCols = this.db.prepare("PRAGMA table_info(recon)").all().map((c) => c.name);
+    if (!reconCols.includes("event_json")) this.db.prepare("ALTER TABLE recon ADD COLUMN event_json TEXT").run();
   }
   // reconciliation support
-  addCandidate(c) { this.db.prepare("INSERT INTO candidate(cand_json) VALUES(?)").run(JSON.stringify(c)); }
-  candidates() { return this.db.prepare("SELECT cand_json FROM candidate").all().map((r) => JSON.parse(r.cand_json)); }
-  recordHistory(h) { this.db.prepare("INSERT INTO recon(kind,survivor,merged,from_id,into_json,authority,reason,at) VALUES(?,?,?,?,?,?,?,?)").run(h.kind ?? null, h.survivor ?? null, h.merged ?? null, h.from ?? null, h.into ? JSON.stringify(h.into) : null, h.authority ?? null, h.reason ?? null, h.at ?? null); }
-  reconHistory() { return this.db.prepare("SELECT kind,survivor,merged,from_id AS from,into_json,authority,reason,at FROM recon").all().map((r) => ({ ...r, into: r.into_json ? JSON.parse(r.into_json) : undefined, into_json: undefined })); }
+  addCandidate(c) {
+    this.db.prepare("INSERT INTO candidate(cand_json) VALUES(?)").run(JSON.stringify(c));
+    this.db.prepare("DELETE FROM candidate WHERE rowid NOT IN (SELECT rowid FROM candidate ORDER BY rowid DESC LIMIT 1000)").run();
+  }
+  candidates() { return this.db.prepare("SELECT cand_json FROM candidate ORDER BY rowid").all().map((r) => JSON.parse(r.cand_json)); }
+  markCandidate(id, status) {
+    const row = this.db.prepare("SELECT rowid,cand_json FROM candidate ORDER BY rowid").all().find(r => JSON.parse(r.cand_json).candidate_id === id);
+    if (!row) return;
+    const c = JSON.parse(row.cand_json); c.status = status;
+    this.db.prepare("UPDATE candidate SET cand_json=? WHERE rowid=?").run(JSON.stringify(c), row.rowid);
+  }
+  recordHistory(h) {
+    this.db.prepare("INSERT INTO recon(kind,survivor,merged,from_id,into_json,authority,reason,at,event_json) VALUES(?,?,?,?,?,?,?,?,?)")
+      .run(h.kind ?? null, h.survivor ?? null, h.merged ?? null, h.from ?? null, h.into ? JSON.stringify(h.into) : null, h.authority ?? null, h.reason ?? null, h.at ?? null, JSON.stringify(h));
+  }
+  reconHistory() {
+    return this.db.prepare("SELECT kind,survivor,merged,from_id AS from,into_json,authority,reason,at,event_json FROM recon").all().map((r) => {
+      if (r.event_json) return JSON.parse(r.event_json);
+      return { ...r, into: r.into_json ? JSON.parse(r.into_json) : undefined, into_json: undefined, event_json: undefined };
+    });
+  }
   reindexExternalTo(fromId, toId) {
     this.db.prepare("UPDATE relation SET src=? WHERE src=? AND type='identified_as'").run(toId, fromId);
   }

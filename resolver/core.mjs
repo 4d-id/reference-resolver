@@ -28,9 +28,14 @@ export function parse4did(id) {
 function mintDescriptor() {
   return Buffer.from(randomUUID().replace(/-/g, ""), "hex").toString("base64url");
 }
-export function mint4did(variant, cell, { vref = null, domain = null, genesis = null } = {}) {
+export function mint4did(variant, cell, { vref = null, domain = null, genesis } = {}) {
+  if (variant === "id") {
+    if (vref || domain) throw new Error("non-spatial id variant does not permit vref or domain");
+    if (!/^[A-Fa-f0-9]{32,64}$/.test(cell)) throw new Error("non-spatial home token must be 128-bit-or-greater random hexadecimal material");
+  }
   const cellPart = domain ? `${domain}.${cell}` : cell;
-  const g = genesis ? `:${genesis}` : "";
+  const marker = variant === "id" ? null : (genesis ?? genesisMarker());
+  const g = marker ? `:${marker}` : "";
   return `4did:${variant}:${cellPart}${vref ? `;v=${vref}` : ""}:${mintDescriptor()}${g}`;
 }
 // format a Date as a 4D-ID genesis marker: 20260904T141500Z
@@ -41,6 +46,7 @@ export function genesisMarker(d = new Date()) {
 
 const ZONE_RES = 6;
 export function zoneOf(anchor) {
+  if (anchor.variant === "id") return `id:${anchor.cell}`;
   if (anchor.variant === "h3" && isValidCell(anchor.cell)) {
     const r = getResolution(anchor.cell);
     return r > ZONE_RES ? cellToParent(anchor.cell, ZONE_RES) : anchor.cell;
@@ -54,9 +60,20 @@ export class Resolver {
 
   putState(state) {
     if (!FOURDID.test(state.id)) throw new Error(`invalid id: ${state.id}`);
-    const zone = zoneOf(state.anchor);
+    if (!state.parent) throw new Error("state requires exactly one composition parent");
+    for (const rel of state.relations ?? []) {
+      if (rel.type !== "identified_as" || !rel.registry || !rel.external_id) continue;
+      const existing = this.store.srcByExternal(rel.registry, rel.external_id);
+      if (existing && existing !== state.id) {
+        throw new Error(`external identifier conflict: ${rel.registry}:${rel.external_id} already identifies ${existing}`);
+      }
+    }
     const parsed = parse4did(state.id);
-    const homeZone = parsed.domain ? `oct:${parsed.domain}` : zone;
+    const defaultAnchor = parsed.variant === "id" ? { variant: "h3", cell: parsed.cell, resolution: 0 } : { variant: parsed.variant, cell: parsed.cell, resolution: 0 };
+    if (!state.anchor) state.anchor = defaultAnchor;
+    if (!state.pose) state.pose = { position: [0, 0, 0], orientation: [0, 0, 0, 1] };
+    const zone = zoneOf(state.anchor);
+    const homeZone = parsed.variant === "id" ? `id:${parsed.cell}` : (parsed.domain ? `oct:${parsed.domain}` : zone);
     const gen = this.store.bumpZone(zone);
     state.generation = gen;
     this.store.putEntity({
@@ -170,40 +187,65 @@ export class Resolver {
 
   // propose a candidate match between two identities with a confidence and provenance.
   // returns a candidate record; does not merge (automation proposes, authority promotes).
-  proposeMatch(idA, idB, { confidence, by = "matcher", method = "spatial+class", evidence = [] }) {
+  proposeMatch(idA, idB, { confidence, by = "matcher", method = "external-evidence", evidence = [], expiry } = {}) {
     const a = this._row(idA), b = this._row(idB);
     if (!a || !b) throw new Error("both identities must exist to propose a match");
-    const cand = { kind: "match-candidate", a: idA, b: idB, confidence, by, method, evidence, at: new Date().toISOString() };
+    if (idA === idB) throw new Error("candidate identities must differ");
+    if (!(confidence >= 0 && confidence <= 1)) throw new Error("candidate confidence must be in [0, 1]");
+    if (!Array.isArray(evidence) || evidence.length === 0) throw new Error("candidate requires external evidence references");
+    const at = new Date();
+    const cand = {
+      candidate_id: `candidate:${randomUUID()}`,
+      kind: "match-candidate", a: idA, b: idB, confidence, by, method,
+      evidence: evidence.slice(0, 64), at: at.toISOString(),
+      expiry: expiry ?? new Date(at.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+      status: "proposed"
+    };
     this.store.addCandidate(cand);
     return cand;
   }
 
-  listCandidates() { return this.store.candidates(); }
+  listCandidates({ limit = 100 } = {}) {
+    const bounded = Math.max(1, Math.min(Number(limit) || 100, 500));
+    const now = Date.now();
+    return this.store.candidates().filter(c => Date.parse(c.expiry) > now).slice(0, bounded);
+  }
 
   // promote a candidate into an authority-attributed merge; deployment policy decides authorization.
   // survivor = earlier genesis marker; loser -> merged, redirects, keeps derivation.
-  merge(idA, idB, { authority, reason = "reconciled" } = {}) {
-    if (!authority) throw new Error("merge requires an authority field (deployment policy authorizes)");
+  merge(idA, idB, { authority, reason = "reconciled", candidate_id } = {}) {
+    if (!authority) throw new Error("merge requires an authority attribution field; deployment policy authorizes it");
     const a = this._row(idA), b = this._row(idB);
     if (!a || !b) throw new Error("both identities must exist");
+    const candidate = this.listCandidates({ limit: 500 }).find(c =>
+      (!candidate_id || c.candidate_id === candidate_id) &&
+      ((c.a === idA && c.b === idB) || (c.a === idB && c.b === idA))
+    );
+    if (!candidate) throw new Error("merge requires a current candidate carrying external evidence");
     const genA = this._genesisMs(idA), genB = this._genesisMs(idB);
     const [survivor, loser] = genA <= genB ? [a, b] : [b, a];
     const sState = JSON.parse(survivor.state_json), lState = JSON.parse(loser.state_json);
-    // survivor absorbs the loser's external ids and observation relations (derivation preserved)
     const merged = new Set((sState.relations || []).map(r => JSON.stringify(r)));
     for (const r of (lState.relations || [])) {
       if (r.type === "identified_as" || r.type === "observed_by" || r.type === "represents") merged.add(JSON.stringify(r));
     }
     sState.relations = [...merged].map(x => JSON.parse(x));
-    sState.relations.push({ type: "derived_from", target: loser.id, note: "merge:"+reason, confidence: 1 });
-    sState.provenance = Object.assign({}, sState.provenance, { merge_authority: authority, merged_at: new Date().toISOString() });
+    sState.relations.push({
+      type: "derived_from", target: loser.id, confidence: 1,
+      provenance: { method: "authority-attributed-merge", evidence_refs: candidate.evidence, approval_status: "approved" }
+    });
     sState.sequence = (sState.sequence || 0) + 1;
-    this.putState(sState);
-    // rewire the loser's external ids to point at the survivor, and mark it merged+redirect
     this.store.reindexExternalTo(loser.id, survivor.id);
+    this.putState(sState);
     this.store.setMerged(loser.id, survivor.id);
-    this.store.recordHistory({ kind: "merge", survivor: survivor.id, merged: loser.id, authority, reason, at: new Date().toISOString() });
-    return { survivor: survivor.id, merged: loser.id };
+    this.store.markCandidate(candidate.candidate_id, "accepted");
+    const decision_id = `decision:${randomUUID()}`;
+    this.store.recordHistory({
+      decision_id, kind: "merge", outcome: "reuse", survivor: survivor.id, merged: loser.id,
+      candidate_id: candidate.candidate_id, evidence: candidate.evidence, authority, reason,
+      at: new Date().toISOString()
+    });
+    return { decision_id, survivor: survivor.id, merged: loser.id };
   }
 
   // split one identity into new identities, each derived from the original (Part 4, 15.2)
@@ -216,8 +258,10 @@ export class Resolver {
       const child = JSON.parse(JSON.stringify(s));
       const m = mint4did("h3", s.anchor.cell, { vref: p.vref });
       child.id = m; child.sequence = 1;
-      child.relations = [{ type: "derived_from", target: id, note: "split", confidence: 1 },
-                         ...(p.relations || [])];
+      child.relations = [{
+        type: "derived_from", target: id, confidence: 1,
+        provenance: { method: "authority-attributed-split", approval_status: "approved" }
+      }, ...(p.relations || [])];
       if (p.label) child.labels = [{ text: p.label, source: "split" }];
       this.putState(child); created.push(child.id);
     }
@@ -233,8 +277,11 @@ export class Resolver {
       const t = p.genesis; const iso = `${t.slice(0,4)}-${t.slice(4,6)}-${t.slice(6,8)}T${t.slice(9,11)}:${t.slice(11,13)}:${t.slice(13,15)}Z`;
       const ms = Date.parse(iso); if (!isNaN(ms)) return ms;
     }
-    // UUIDv7 descriptor: first 48 bits are ms timestamp
-    try { const raw = Buffer.from(p.local.replace(/-/g,"+").replace(/_/g,"/"), "base64"); if (raw.length >= 6) return raw.readUIntBE(0,6); } catch {}
+    // UUIDv7 descriptor: first 48 bits are a timestamp, but only when the UUID version nibble is 7.
+    try {
+      const raw = Buffer.from(p.local.replace(/-/g,"+").replace(/_/g,"/"), "base64");
+      if (raw.length === 16 && (raw[6] >> 4) === 7) return raw.readUIntBE(0,6);
+    } catch {}
     return Number.MAX_SAFE_INTEGER; // unknown genesis sorts last (never wins survivor)
   }
 

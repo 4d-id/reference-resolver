@@ -38,8 +38,15 @@ export class MemoryStore {
   entitiesGenAbove(gen) { return this.allEntities().filter((e) => e.generation > gen); }
   zones() { return [...this.zoneGen.entries()].map(([zone, generation]) => ({ zone, generation })).sort((a, b) => a.zone < b.zone ? -1 : 1); }
   // reconciliation support
-  addCandidate(c) { this.cand.push(c); }
+  addCandidate(c) {
+    this.cand.push(c);
+    if (this.cand.length > 1000) this.cand.splice(0, this.cand.length - 1000);
+  }
   candidates() { return this.cand; }
+  markCandidate(id, status) {
+    const c = this.cand.find(x => x.candidate_id === id);
+    if (c) c.status = status;
+  }
   recordHistory(h) { this.recon.push(h); }
   reconHistory() { return this.recon; }
   reindexExternalTo(fromId, toId) {

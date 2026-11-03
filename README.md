@@ -9,7 +9,7 @@ The reference implementation of the [4D-ID specification](https://github.com/4d-
 🗄️ **Storage:** pure-JS in-memory (default) or SQLite (`STORE=sqlite`).
 🌐 **Bindings:** REST today (matches `openapi/openapi.yaml`); MCP to follow.
 
-4D-ID begins after grounding: this resolver does not perceive, localize, register, or render the world. It stores and resolves caller-supplied identities, grounding, state, and evidence. It is a reference, not a production service: single process, single store, no authentication. Deployment policy is outside this API.
+4D-ID begins after grounding: this resolver does not perceive, localize, register, or render the world. It stores and resolves caller-supplied identities, grounding, state, registrations, and evidence. It is a reference, not a production service: single process, single store, no authentication. Authority strings are attribution only; deployment policy must authenticate and authorize operations.
 
 This resolver exists to prove the spec is buildable, to provide a reference target for the current conformance checks, and to give you something to run behind the four-call quickstart. The production shape (PostGIS, stateless behind the Part 4 architecture) is a separate build.
 
@@ -41,17 +41,17 @@ curl "localhost:4141/entity/<4did>/representations?purpose=agent-context"
 curl "localhost:4141/watch?cells=<zone>&since=0"
 ```
 
-`resolve` is a **lookup**, not a mint: it finds an identity already present in resolver records. Grounding and any external identifier mapping are supplied by the caller or deployment; this API does not perform perception or registration. To create identities, `POST /ingest` (blocked in read-only deployments), or try the [live demos](https://4d-id.org/demos.html), which create isolated sandbox records client-side.
+`resolve` is a **lookup**, not a mint: it finds an identity already present in resolver records. Grounding and external identifier mappings are supplied by the caller or deployment. Exact external identifiers must not be rebound silently; conflicts require review. To create identities, `POST /ingest` (blocked in read-only deployments), or try the [live demos](https://4d-id.org/demos.html), which create isolated sandbox records client-side.
 
 ## Reconciliation: two systems, one thing
 
-Two systems can hold different identities for the same subject. This resolver implements cross-system identity reconciliation (Part 4, §15.2): an external matcher proposes a match and supplies confidence plus evidence; an authority-attributed operation records it, and deployment policy—not this unauthenticated API—determines whether that authority is authorized. The earlier-genesis identity survives while the other redirects and keeps its derivation. Resolving the redirected id follows the merge to the survivor (`redirected_from`), and shared external identifiers re-point to the survivor.
+Two systems can hold different identities for the same subject. This resolver implements bounded cross-system identity reconciliation (Part 4, §15.2): an external matcher proposes a time-limited candidate with evidence; an authority-attributed operation records a decision, and deployment policy, not this unauthenticated API, determines whether that authority is authorized. Candidate evidence never merges by itself. The earlier-genesis identity survives while the other redirects and keeps its derivation.
 
 ```bash
 curl -X POST localhost:4141/reconcile/propose -H 'content-type: application/json' \
-  -d '{"a":"<4did-a>","b":"<4did-b>","confidence":0.94,"by":"external-matcher:v1","method":"tag+proximity+class","evidence":["same asset.tag","0.1m apart"]}'
+  -d '{"a":"<4did-a>","b":"<4did-b>","confidence":0.94,"by":"external-matcher:v1","method":"reviewed-crosswalk","evidence":["evidence:tag","evidence:registration"]}'
 curl -X POST localhost:4141/reconcile/merge   -H 'content-type: application/json' \
-  -d '{"a":"<4did-a>","b":"<4did-b>","authority":"warehouse-ops:authorized"}'
+  -d '{"a":"<4did-a>","b":"<4did-b>","candidate_id":"<candidate-id>","authority":"warehouse-ops:declared"}'
 curl "localhost:4141/entity/<4did-a>/merge-history"
 ```
 
@@ -72,12 +72,12 @@ curl "localhost:4141/entity/<4did-a>/merge-history"
 npm test    # schema validation + resolver smoke + HTTP end-to-end + conformance + reconciliation
 ```
 
-The conformance run reports exactly **15 schema-level checks passing** today; functional work continues as propagation, security, and domain behaviour are implemented. See the [conformance manifest](conformance/manifest.json).
+The 2.4 manifest defines **112 targets**. The data runner implements **15 schema checks**; functional work continues across registrations, reconciliation limits, authority policy, propagation, security, and domains. See the [conformance manifest](conformance/manifest.json).
 
 ## What it implements
 
-`core`, `fabric` (zones, home register, resolution), `lifecycle` basics (including merge/split reconciliation with genesis markers), and the `scale` subset for snapshots and list-then-watch, over the Clause 10 access operations. Identifier parse and mint, H3 anchoring, generation counters, and the context envelope are all here.
+A partial `core`, `fabric`, `lifecycle`, and `scale` implementation over the Clause 10 access operations. It supports spatial-form IDs, the 2.4 non-spatial `id` variant, exact-alias conflict rejection, bounded candidate lists, authority-attributed merge/split decisions, snapshots, list-then-watch, and context envelopes. It does not implement authentication, the full authority model, or full functional conformance.
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE). Built on the [4D-ID specification](https://github.com/4d-id/spec), which is intended to be royalty-free.
+Apache-2.0. See [LICENSE](LICENSE). Built against the 4D-ID 2.4 working draft offered for community review.

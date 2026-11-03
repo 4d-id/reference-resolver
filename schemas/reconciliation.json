@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://4did.org/schemas/2.4/reconciliation.json",
+  "$comment": "4D-ID 2.4, November 3, 2026. Working draft offered for community review; partial JSON binding, see encoding/2.4.md.",
+  "title": "Bounded reconciliation decision",
+  "description": "Recorded decision over externally supplied evidence (Part 1, 7.10), not an instruction to mutate state. Schema checks do not prove lookup completion, evidence, authority, entropy, expiry ordering, or permission to mint.",
+  "type": "object",
+  "properties": {
+    "decision_id": { "type": "string", "minLength": 1 },
+    "outcome": { "type": "string", "enum": ["reuse", "no_acceptable_match", "ambiguous", "conflict", "rejected"] },
+    "reason": { "type": "string", "minLength": 1 },
+    "selected_id": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/fourdid" },
+    "candidates": { "type": "array", "uniqueItems": true, "items": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/fourdid" } },
+    "evidence_refs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "provenance": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/provenance" },
+    "authority": { "type": "string", "minLength": 1, "description": "Attributed responsible authority, not authentication or authorization proof. Verification remains deployment policy under Clause 12 and 14.4." },
+    "policy_ref": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "registries": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "authorities": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "indexes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      },
+      "required": ["registries", "authorities", "indexes"],
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "max_lookups": { "type": "integer", "minimum": 1 },
+        "max_candidates": { "type": "integer", "minimum": 1 },
+        "max_elapsed_ms": { "type": "integer", "minimum": 1 }
+      },
+      "required": ["max_lookups", "max_candidates", "max_elapsed_ms"],
+      "additionalProperties": false
+    },
+    "lookup_complete": { "type": "boolean" },
+    "exhausted": { "type": "boolean" },
+    "decided_at": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/instant" },
+    "expires_at": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/instant" }
+  },
+  "required": ["decision_id", "outcome", "reason", "candidates", "evidence_refs", "provenance", "authority", "policy_ref", "scope", "limits", "lookup_complete", "exhausted", "decided_at", "expires_at"],
+  "allOf": [
+    {
+      "if": { "properties": { "outcome": { "const": "reuse" } }, "required": ["outcome"] },
+      "then": { "required": ["selected_id"] },
+      "else": { "not": { "required": ["selected_id"] } }
+    },
+    {
+      "if": { "properties": { "outcome": { "const": "no_acceptable_match" } }, "required": ["outcome"] },
+      "then": { "properties": { "lookup_complete": { "const": true }, "exhausted": { "const": false } } }
+    }
+  ],
+  "additionalProperties": false
+}

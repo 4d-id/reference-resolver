@@ -11,7 +11,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
 const load = (p) => JSON.parse(readFileSync(join(root, p), "utf8"));
 
-const schemas = ["common", "state", "observation", "snapshot", "domain", "envelope"].map(
+const schemas = ["common", "state", "observation", "snapshot", "domain", "envelope", "reconciliation"].map(
   (n) => load(`schemas/${n}.json`)
 );
 
@@ -54,16 +54,16 @@ for (const [id, expect] of ids) {
 
 console.log("\nSample records:");
 const sample = load("samples/facility/entities.json");
-sample.states.forEach((s, i) => check("https://4did.org/schemas/2.3/state.json", s, `state[${i}] ${s.producer}`));
-sample.domains.forEach((d, i) => check("https://4did.org/schemas/2.3/domain.json", d, `domain[${i}] ${d.mode}`));
+sample.states.forEach((s, i) => check("https://4did.org/schemas/2.4/state.json", s, `state[${i}] ${s.producer}`));
+sample.domains.forEach((d, i) => check("https://4did.org/schemas/2.4/domain.json", d, `domain[${i}] ${d.mode}`));
 
 console.log("\nNegative cases (should FAIL to validate):");
 const badState = structuredClone(sample.states[0]);
 delete badState.time;
-const v = ajv.getSchema("https://4did.org/schemas/2.3/state.json");
+const v = ajv.getSchema("https://4did.org/schemas/2.4/state.json");
 console.log(`  ${!v(badState) ? "ok  " : "FAIL"} state missing required 'time' is rejected`);
 const badDomain = { id: sample.domains[0].id, grid: "oct", mode: "scenario", extent_policy: "fixed", time_mapping: { rate: 0 }, authority: "x" };
-console.log(`  ${!v && true, !ajv.getSchema("https://4did.org/schemas/2.3/domain.json")(badDomain) ? "ok  " : "FAIL"} scenario domain without derived_from is rejected`);
+console.log(`  ${!v && true, !ajv.getSchema("https://4did.org/schemas/2.4/domain.json")(badDomain) ? "ok  " : "FAIL"} scenario domain without derived_from is rejected`);
 
 console.log(`\n${failures === 0 ? "PASS" : "FAIL"}: ${failures} problem(s).`);
 process.exit(failures === 0 ? 0 : 1);

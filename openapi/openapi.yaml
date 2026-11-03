@@ -1,93 +1,215 @@
 openapi: 3.1.0
 info:
-  title: 4D-ID Access API
-  version: "2.3"
-  description: >
-    The REST binding of the Clause 10 access operations (Part 2, 10.1).
-    4D-ID begins after grounding: callers supply identities, grounding, state,
-    and evidence; this API does not perform perception, localization,
-    registration, or rendering. One semantic API, many bindings: these
-    operations have the same meaning over REST, gRPC, MCP, an agent-to-agent
-    task, a ROS service, or an engine plugin. This document is the REST
-    binding; it is not normative. The API has no authentication; an
-    authority field is descriptive, and deployment policy determines whether
-    an operation is authorized.
+  title: 4D-ID Reference Resolver API
+  version: '2.4'
+  x-spec-date: '2026-11-03'
+  x-status: working draft offered for community review
+  description: "Partial, informative REST binding of the Clause 10 access operations (Part 2, 10.1), dated November\
+    \ 3, 2026. Binding status and limits are recorded in encoding/2.4.md. One semantic API, many bindings: these\
+    \ operations have the same meaning over REST, gRPC, MCP, an agent-to-agent task, a ROS service, or an engine\
+    \ plugin. This document is the REST binding; it is not normative. Callers supply identity records, grounding,\
+    \ state, and evidence; these operations do not perform perception, matching, localization, registration, or\
+    \ rendering. OBSERVE -> GROUND -> IDENTIFY -> RESOLVE -> INTEROPERATE separates evidence, external grounding\
+    \ and localization, identity continuity, and downstream use. Authority fields are attribution only; authentication\
+    \ and authorization remain deployment policy under Clause 12 and Part 4, 14.4. No security scheme or signature\
+    \ serialization is specified by this partial binding.\n This implementation also exposes explicitly partial\
+    \ ingest and reconciliation extension routes documented below; it has no authentication.\n"
   license:
     name: Apache-2.0
     identifier: Apache-2.0
 servers:
-  - url: https://example.org/4did/v2.3
+- url: https://example.org/4did/v2.4
 tags:
-  - name: access
-    description: Clause 10 operations
+- name: access
+  description: Clause 10 operations
+- name: implementation
+  description: Reference-only extension routes; partial, unauthenticated, and not a conformance claim.
 paths:
   /resolve:
     get:
       operationId: resolve
-      tags: [access]
-      summary: Resolve a caller-supplied external identifier or 4D-ID to its stored identity and current locator.
+      tags:
+      - access
+      summary: Resolve a supplied external identifier or 4D-ID to its stored 4D-ID and current locator; lookup only,
+        with no implicit minting.
       parameters:
-        - { name: registry, in: query, schema: { type: string } }
-        - { name: external_id, in: query, schema: { type: string } }
-        - { name: id, in: query, schema: { $ref: "#/components/schemas/fourdid" } }
+      - name: registry
+        in: query
+        schema:
+          type: string
+      - name: external_id
+        in: query
+        schema:
+          type: string
+      - name: id
+        in: query
+        schema:
+          $ref: '#/components/schemas/fourdid'
       responses:
-        "200":
-          description: Resolved.
+        '200':
+          description: Resolved existing identity; this operation does not mint.
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  id: { $ref: "#/components/schemas/fourdid" }
-                  locator: { type: string }
-                  snapshot_id: { type: string }
-                  redirected_from: { $ref: "#/components/schemas/fourdid", description: "Present when the queried id was merged into the survivor." }
-                required: [id, locator, snapshot_id]
-        "404": { description: Signed negative. }
+                  id:
+                    $ref: '#/components/schemas/fourdid'
+                  locator:
+                    type: string
+                  snapshot_id:
+                    type: string
+                  decision:
+                    allOf:
+                    - $ref: '#/components/schemas/reconciliation'
+                    - properties:
+                        outcome:
+                          const: reuse
+                required:
+                - id
+                - locator
+                - snapshot_id
+                - decision
+        '404':
+          description: Completed, scoped no acceptable match, with decision expiry. Requires a signed negative under
+            Clause 10; signature serialization is not defined here. Does not authorize minting on its own.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/reconciliation'
+                - properties:
+                    outcome:
+                      const: no_acceptable_match
+        '409':
+          description: Ambiguous evidence or conflicting identity/authority assertions; no automatic mutation.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/reconciliation'
+                - properties:
+                    outcome:
+                      enum:
+                      - ambiguous
+                      - conflict
+        '403':
+          description: Rejected by deployment policy; not a no-match.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/reconciliation'
+                - properties:
+                    outcome:
+                      const: rejected
+        '503':
+          description: Lookup unavailable, incomplete, truncated or budget exhausted; never a no-match. The decision
+            records the limitation and expiry.
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/reconciliation'
+                - properties:
+                    outcome:
+                      enum:
+                      - ambiguous
+                      - conflict
+                      - rejected
   /entity/{id}:
     get:
       operationId: get_entity
-      tags: [access]
+      tags:
+      - access
       summary: Stable metadata for an entity.
       parameters:
-        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/fourdid'
       responses:
-        "200":
-          description: OK
-          content: { application/json: { schema: { $ref: "#/components/schemas/entity" } } }
-  /entity/{id}/state:
-    get:
-      operationId: get_state
-      tags: [access]
-      summary: Current 4D-State, or state at a past instant where history is claimed.
-      parameters:
-        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: at, in: query, schema: { type: string, format: date-time } }
-      responses:
-        "200":
-          description: OK
-          content: { application/json: { schema: { $ref: "#/components/schemas/state" } } }
-  /entity/{id}/relations:
-    get:
-      operationId: get_relations
-      tags: [access]
-      parameters:
-        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: type, in: query, schema: { type: string } }
-        - { name: direction, in: query, schema: { type: string, enum: [out, in, both] } }
-        - { name: at, in: query, schema: { type: string, format: date-time } }
-        - { name: min_confidence, in: query, schema: { type: number } }
-        - { name: depth, in: query, schema: { type: integer } }
-      responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/relation" } }
+              schema:
+                $ref: '#/components/schemas/entity'
+  /entity/{id}/state:
+    get:
+      operationId: get_state
+      tags:
+      - access
+      summary: Current 4D-State, or state at a past instant where history is claimed.
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/fourdid'
+      - name: at
+        in: query
+        schema:
+          type: string
+          format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/state'
+  /entity/{id}/relations:
+    get:
+      operationId: get_relations
+      tags:
+      - access
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/fourdid'
+      - name: type
+        in: query
+        schema:
+          type: string
+      - name: direction
+        in: query
+        schema:
+          type: string
+          enum:
+          - out
+          - in
+          - both
+      - name: at
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: min_confidence
+        in: query
+        schema:
+          type: number
+      - name: depth
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/relation'
   /query:
     post:
       operationId: query
-      tags: [access]
+      tags:
+      - access
       summary: Entities by cell and time.
       requestBody:
         content:
@@ -95,84 +217,121 @@ paths:
             schema:
               type: object
               properties:
-                cells: { type: array, items: { type: string } }
-                interval: { type: array, items: { type: string, format: date-time }, minItems: 2, maxItems: 2 }
-                layer: { type: string }
-                class: { type: string }
-              required: [cells]
+                cells:
+                  type: array
+                  items:
+                    type: string
+                interval:
+                  type: array
+                  items:
+                    type: string
+                    format: date-time
+                  minItems: 2
+                  maxItems: 2
+                layer:
+                  type: string
+                class:
+                  type: string
+              required:
+              - cells
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/state" } }
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/state'
   /events:
     post:
       operationId: query_events
-      tags: [access]
+      tags:
+      - access
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                subject: { $ref: "#/components/schemas/fourdid" }
-                cells: { type: array, items: { type: string } }
-                interval: { type: array, items: { type: string, format: date-time }, minItems: 2, maxItems: 2 }
-                class: { type: string }
-                min_confidence: { type: number }
-              required: [interval]
+                subject:
+                  $ref: '#/components/schemas/fourdid'
+                cells:
+                  type: array
+                  items:
+                    type: string
+                interval:
+                  type: array
+                  items:
+                    type: string
+                    format: date-time
+                  minItems: 2
+                  maxItems: 2
+                class:
+                  type: string
+                min_confidence:
+                  type: number
+              required:
+              - interval
       responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/state" } }
-  /transform:
-    get:
-      operationId: transform
-      tags: [access]
-      parameters:
-        - { name: from, in: query, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: to, in: query, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: at, in: query, schema: { type: string, format: date-time } }
-      responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  matrix: { type: array, items: { type: number }, minItems: 16, maxItems: 16 }
-                  uncertainty: { $ref: "#/components/schemas/uncertainty" }
-                required: [matrix]
+                type: array
+                items:
+                  $ref: '#/components/schemas/state'
   /entity/{id}/representations:
     get:
       operationId: get_representations
-      tags: [access]
-      summary: Representations ranked for a downstream client purpose, subject to deployment policy, license, tier, and validity; the resolver returns metadata and does not render or localize.
+      tags:
+      - access
+      summary: Representations and metadata ranked for a downstream client purpose, subject to credentials, license,
+        tier, and validity; no rendering or localization is performed.
       parameters:
-        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: purpose, in: query, required: true, schema: { type: string, enum: [rendering, measurement, localization, agent-context, remote-viewing] } }
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/fourdid'
+      - name: purpose
+        in: query
+        required: true
+        schema:
+          type: string
+          enum:
+          - rendering
+          - measurement
+          - localization
+          - agent-context
+          - remote-viewing
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/relation" } }
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/relation'
   /snapshot:
     get:
       operationId: get_snapshot
-      tags: [access]
+      tags:
+      - access
       responses:
-        "200":
+        '200':
           description: OK
-          content: { application/json: { schema: { $ref: "#/components/schemas/snapshot" } } }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/snapshot'
   /list:
     post:
       operationId: list
-      tags: [access]
+      tags:
+      - access
       summary: State across cells at a snapshot (list half of list-then-watch).
       requestBody:
         content:
@@ -180,135 +339,293 @@ paths:
             schema:
               type: object
               properties:
-                cells: { type: array, items: { type: string } }
-                snapshot_id: { type: string }
-              required: [cells, snapshot_id]
+                cells:
+                  type: array
+                  items:
+                    type: string
+                snapshot_id:
+                  type: string
+              required:
+              - cells
+              - snapshot_id
       responses:
-        "200":
+        '200':
           description: OK
           content:
             application/json:
-              schema: { type: array, items: { $ref: "#/components/schemas/state" } }
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/state'
   /watch:
     get:
       operationId: watch
-      tags: [access]
-      summary: Changes after a generation or snapshot (server-sent events in this binding).
+      tags:
+      - access
+      summary: Return a JSON array of changes after a generation in this reference implementation.
       parameters:
-        - { name: cells, in: query, schema: { type: string } }
-        - { name: id, in: query, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: since, in: query, required: true, schema: { type: string } }
+      - name: cells
+        in: query
+        schema:
+          type: string
+      - name: id
+        in: query
+        schema:
+          $ref: '#/components/schemas/fourdid'
+      - name: since
+        in: query
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
-          description: A stream of 4D-State changes with drop indicators.
-          content: { text/event-stream: { schema: { type: string } } }
+        '200':
+          description: A bounded JSON array of current 4D-State changes. This implementation does not stream SSE.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/state'
   /entity/{id}/context:
     get:
       operationId: context
-      tags: [access]
+      tags:
+      - access
       summary: A bounded, deterministic context envelope for an agent.
       parameters:
-        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
-        - { name: fields, in: query, schema: { type: string, description: "Comma-separated field selection." } }
-        - { name: max_entities, in: query, schema: { type: integer } }
-        - { name: max_bytes, in: query, schema: { type: integer } }
-        - { name: snapshot_id, in: query, schema: { type: string } }
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/fourdid'
+      - name: fields
+        in: query
+        schema:
+          type: string
+          description: Comma-separated field selection.
+      - name: max_entities
+        in: query
+        schema:
+          type: integer
+      - name: max_bytes
+        in: query
+        schema:
+          type: integer
+      - name: snapshot_id
+        in: query
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: OK
-          content: { application/json: { schema: { $ref: "#/components/schemas/envelope" } } }
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/envelope'
+  /ingest:
+    post:
+      operationId: ingest_reference_state
+      tags:
+      - implementation
+      summary: Store a caller-supplied state. Deployment policy must authenticate and authorize this unauthenticated
+        extension.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/state'
+      responses:
+        '200':
+          description: State stored.
+        '400':
+          description: Invalid record or exact external identifier conflict.
   /reconcile/propose:
     post:
-      operationId: propose_match
-      tags: [reconciliation]
-      summary: Propose a candidate match between two identities (automation proposes; does not merge).
+      operationId: propose_match_reference
+      tags:
+      - implementation
+      summary: Record a time-limited candidate supplied by an external matcher. This does not merge.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                a: { $ref: "#/components/schemas/fourdid" }
-                b: { $ref: "#/components/schemas/fourdid" }
-                confidence: { type: number }
-                by: { type: string }
-                method: { type: string }
-                evidence: { type: array, items: { type: string } }
-              required: [a, b]
+                a:
+                  $ref: '#/components/schemas/fourdid'
+                b:
+                  $ref: '#/components/schemas/fourdid'
+                confidence:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                by:
+                  type: string
+                method:
+                  type: string
+                evidence:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 64
+                expiry:
+                  type: string
+                  format: date-time
+              required:
+              - a
+              - b
+              - confidence
+              - evidence
+              additionalProperties: false
       responses:
-        "200": { description: Candidate recorded. }
-        "400": { description: Invalid request. }
+        '200':
+          description: Candidate recorded.
+        '400':
+          description: Invalid or ungrounded candidate.
   /reconcile/candidates:
     get:
-      operationId: list_candidates
-      tags: [reconciliation]
-      summary: List proposed match candidates.
+      operationId: list_candidates_reference
+      tags:
+      - implementation
+      summary: List current candidates with a bounded limit.
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 500
+          default: 100
       responses:
-        "200": { description: OK }
+        '200':
+          description: Current candidates.
   /reconcile/merge:
     post:
-      operationId: merge
-      tags: [reconciliation]
-      summary: Record an authority-attributed match. Earlier-genesis survives; loser redirects. The API has no authentication; deployment policy determines whether the supplied authority is authorized.
+      operationId: merge_reference
+      tags:
+      - implementation
+      summary: Record an authority-attributed merge decision referencing current external evidence. Authority is
+        attribution, not proof.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                a: { $ref: "#/components/schemas/fourdid" }
-                b: { $ref: "#/components/schemas/fourdid" }
-                authority: { type: string }
-                reason: { type: string }
-              required: [a, b, authority]
+                a:
+                  $ref: '#/components/schemas/fourdid'
+                b:
+                  $ref: '#/components/schemas/fourdid'
+                candidate_id:
+                  type: string
+                authority:
+                  type: string
+                reason:
+                  type: string
+              required:
+              - a
+              - b
+              - candidate_id
+              - authority
+              additionalProperties: false
       responses:
-        "200": { description: Merge applied; survivor and merged ids returned. }
-        "400": { description: Missing authority or unknown identity. }
+        '200':
+          description: Decision recorded and redirect installed.
+        '400':
+          description: Missing candidate/evidence, attribution, or identity.
   /reconcile/split:
     post:
-      operationId: split
-      tags: [reconciliation]
-      summary: Record an authority-attributed split, authorized by deployment policy, with each result derived from the original.
+      operationId: split_reference
+      tags:
+      - implementation
+      summary: Record an authority-attributed split. Deployment policy authorizes it.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                id: { $ref: "#/components/schemas/fourdid" }
-                parts: { type: array, items: { type: object } }
-                authority: { type: string }
-              required: [id, parts, authority]
+                id:
+                  $ref: '#/components/schemas/fourdid'
+                parts:
+                  type: array
+                  items:
+                    type: object
+                  minItems: 1
+                authority:
+                  type: string
+              required:
+              - id
+              - parts
+              - authority
+              additionalProperties: false
       responses:
-        "200": { description: Split applied. }
-        "400": { description: Missing authority or unknown identity. }
+        '200':
+          description: Split recorded.
+        '400':
+          description: Invalid request.
   /entity/{id}/merge-history:
     get:
-      operationId: merge_history
-      tags: [reconciliation]
-      summary: The merge/split record for an identity.
+      operationId: merge_history_reference
+      tags:
+      - implementation
+      summary: Return stored merge/split decision history.
       parameters:
-        - { name: id, in: path, required: true, schema: { $ref: "#/components/schemas/fourdid" } }
+      - name: id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/fourdid'
       responses:
-        "200": { description: OK }
+        '200':
+          description: Decision history.
 components:
   schemas:
-    fourdid: { $ref: "../schemas/common.json#/$defs/fourdid" }
-    uncertainty: { $ref: "../schemas/common.json#/$defs/uncertainty" }
-    relation: { $ref: "../schemas/common.json#/$defs/relation" }
-    state: { $ref: "../schemas/state.json" }
-    snapshot: { $ref: "../schemas/snapshot.json" }
-    envelope: { $ref: "../schemas/envelope.json" }
+    fourdid:
+      $ref: ../schemas/common.json#/$defs/fourdid
+    uncertainty:
+      $ref: ../schemas/common.json#/$defs/uncertainty
+    relation:
+      $ref: ../schemas/common.json#/$defs/relation
+    registration:
+      $ref: ../schemas/common.json#/$defs/registration
+    reconciliation:
+      $ref: ../schemas/reconciliation.json
+    state:
+      $ref: ../schemas/state.json
+    snapshot:
+      $ref: ../schemas/snapshot.json
+    envelope:
+      $ref: ../schemas/envelope.json
     entity:
       type: object
       description: Stable metadata (get_entity).
       properties:
-        id: { $ref: "../schemas/common.json#/$defs/fourdid" }
-        parent: { $ref: "../schemas/common.json#/$defs/fourdid" }
-        motion_mode: { type: string }
-        status: { type: string }
-        layer: { type: string }
-        lease: { type: string, format: date-time }
-        labels: { type: array, items: { $ref: "../schemas/common.json#/$defs/label" } }
-        relations: { type: array, items: { $ref: "../schemas/common.json#/$defs/relation" } }
-      required: [id]
+        id:
+          $ref: ../schemas/common.json#/$defs/fourdid
+        parent:
+          $ref: ../schemas/common.json#/$defs/fourdid
+        motion_mode:
+          type: string
+        status:
+          type: string
+        layer:
+          type: string
+        lease:
+          type: string
+          format: date-time
+        labels:
+          type: array
+          items:
+            $ref: ../schemas/common.json#/$defs/label
+        relations:
+          type: array
+          items:
+            $ref: ../schemas/common.json#/$defs/relation
+      required:
+      - id

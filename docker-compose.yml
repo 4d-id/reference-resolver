@@ -1,7 +1,7 @@
 services:
   resolver:
     build: .
-    image: 4did-resolver:2.3
+    image: 4did-resolver:2.4
     ports:
       - "${PORT:-4141}:4141"
     environment:

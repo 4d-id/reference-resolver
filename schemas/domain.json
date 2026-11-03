@@ -1,12 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://4did.org/schemas/2.3/domain.json",
+  "$id": "https://4did.org/schemas/2.4/domain.json",
+  "$comment": "4D-ID 2.4, November 3, 2026. Working draft offered for community review; partial JSON binding, see encoding/2.4.md.",
   "title": "Domain",
   "description": "A root frame with its own grid, clock, and authority (Part 5, 17.1).",
   "type": "object",
   "properties": {
-    "id": { "$ref": "common.json#/$defs/fourdid" },
-    "grid": { "type": "string", "description": "DGGS variant for Earth; oct or a documented synthetic grid otherwise." },
+    "id": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/fourdid" },
+    "grid": { "type": "string", "not": { "const": "id" }, "description": "DGGS variant for Earth; oct or a documented synthetic grid otherwise." },
     "mode": { "type": "string", "enum": ["real", "replica", "scenario", "generated"] },
     "extent_policy": { "type": "string", "enum": ["fixed", "growing"] },
     "time_mapping": {
@@ -18,11 +19,11 @@
       "required": ["rate"],
       "additionalProperties": false
     },
-    "instance_of": { "$ref": "common.json#/$defs/fourdid" },
-    "derived_from": { "$ref": "common.json#/$defs/fourdid", "description": "Required for scenario mode." },
-    "authority": { "type": "string" },
-    "lease": { "$ref": "common.json#/$defs/instant" },
-    "provenance": { "$ref": "common.json#/$defs/provenance" }
+    "instance_of": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/fourdid" },
+    "derived_from": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/fourdid", "description": "Required for scenario mode." },
+    "authority": { "type": "string", "description": "Authority attribution only; not authentication or authorization proof (Part 4, 14.4)." },
+    "lease": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/instant" },
+    "provenance": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/provenance" }
   },
   "required": ["id", "grid", "mode", "extent_policy", "time_mapping", "authority"],
   "allOf": [

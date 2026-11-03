@@ -1,21 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://4did.org/schemas/2.3/observation.json",
+  "$id": "https://4did.org/schemas/2.4/observation.json",
+  "$comment": "4D-ID 2.4, November 3, 2026. Working draft offered for community review; partial JSON binding, see encoding/2.4.md.",
   "title": "Observation",
-  "description": "Ephemeral evidence, never propagated as identity state (Part 4, 15.1).",
+  "description": "Externally produced evidence, never propagated as identity state (Part 4, 15.1). The legacy candidate_4did property is a shorthand for a candidate-reference record; candidate associations are non-authoritative and do not mint, merge, or change identity.",
   "type": "object",
   "properties": {
     "sensor_id": { "type": "string" },
-    "source": { "$ref": "common.json#/$defs/instant" },
+    "source": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/instant" },
     "bound_s": { "type": "number", "minimum": 0 },
     "frame": { "type": "string", "description": "4D-ID of the frame the pose is expressed in." },
-    "pose": { "$ref": "common.json#/$defs/pose" },
-    "uncertainty": { "$ref": "common.json#/$defs/uncertainty" },
+    "pose": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/pose" },
+    "uncertainty": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/uncertainty" },
     "classification": { "type": "string" },
-    "confidence": { "$ref": "common.json#/$defs/confidence" },
+    "confidence": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/confidence" },
     "evidence_hash": { "type": "string" },
-    "expiry": { "$ref": "common.json#/$defs/instant" },
-    "candidate_4did": { "$ref": "common.json#/$defs/fourdid" }
+    "expiry": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/instant" },
+    "candidate_4did": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/fourdid" }
   },
   "required": ["sensor_id", "source", "frame", "pose", "classification", "confidence", "evidence_hash", "expiry"],
   "additionalProperties": false

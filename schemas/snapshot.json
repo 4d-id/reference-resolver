@@ -1,6 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://4did.org/schemas/2.3/snapshot.json",
+  "$id": "https://4did.org/schemas/2.4/snapshot.json",
+  "$comment": "4D-ID 2.4, November 3, 2026. Working draft offered for community review; partial JSON binding, see encoding/2.4.md.",
   "title": "Snapshot",
   "description": "One coherent picture across zones (Part 4, 16.5).",
   "type": "object",
@@ -15,7 +16,7 @@
         "additionalProperties": false
       }
     },
-    "reference_time": { "$ref": "common.json#/$defs/instant" },
+    "reference_time": { "$ref": "https://4did.org/schemas/2.4/common.json#/$defs/instant" },
     "max_skew_s": { "type": "number", "minimum": 0 },
     "staleness_s": { "type": "number", "minimum": 0 }
   },

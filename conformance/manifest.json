@@ -1,566 +1,695 @@
 {
-  "note": "Phase 1 skeleton, generated from the 2.3 spec Annex A tables. 'schema' = a schema-level (D) check is wired now; 'todo' = awaits the reference resolver (Phase 2+).",
+  "note": "4D-ID 2.4 working draft offered for community review, November 3, 2026. Exactly 112 normative tests are defined, not claimed passed. 'schema' means a wired, partial shape check in conformance/shape_checks.py, not full satisfaction of the normative requirement; 'todo' means normative coverage remains unimplemented. All five new tests are todo. Artifact validation does not implement perception, grounding/matching/re-identification/SEGS, localization, registration, or rendering.",
   "version": "2.4",
   "tests": [
     {
       "id": "/conf/core/strict-tree",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/strict-tree"
     },
     {
       "id": "/conf/core/depth",
       "method": "IF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/depth"
     },
     {
       "id": "/conf/core/identity-stable",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/identity-stable"
     },
     {
       "id": "/conf/core/genesis-anchor",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/genesis-anchor"
     },
     {
       "id": "/conf/core/descriptor",
       "method": "ID",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/descriptor",
+      "coverage": "Descriptor length and character shape only; UUID version, entropy source and opacity need inspection/behavioral tests."
     },
     {
       "id": "/conf/core/genesis-implicit",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/genesis-implicit",
+      "coverage": "Optional marker URI shape only; UUIDv7 decoding, canonical normalization and equality are not checked."
     },
     {
       "id": "/conf/core/uri-form",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/uri-form",
+      "coverage": "URI lexical shape and id-mode exclusions only; round-trip, canonical comparison and semantic restrictions are not checked."
     },
     {
       "id": "/conf/core/state-fields",
-      "method": "D",
-      "status": "schema"
+      "method": "DF",
+      "status": "schema",
+      "requirement": "/req/core/state-fields",
+      "coverage": "Required state fields and registration shapes only; validity ordering, status consumption, tree invariants and identity non-mutation are not checked."
     },
     {
       "id": "/conf/core/timestamps",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/timestamps",
+      "coverage": "ISO date-time shape and nonnegative bound only; clock semantics and receive-time handling are not checked."
     },
     {
       "id": "/conf/core/sequence",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/sequence"
     },
     {
       "id": "/conf/core/motion-mode",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/motion-mode"
     },
     {
       "id": "/conf/core/discontinuity",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/discontinuity"
     },
     {
       "id": "/conf/core/vertical-reference",
       "method": "DF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/vertical-reference"
     },
     {
       "id": "/conf/core/lcs",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/lcs"
     },
     {
       "id": "/conf/core/composition",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/composition"
     },
     {
       "id": "/conf/core/uniform-scale",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/uniform-scale"
     },
     {
       "id": "/conf/core/uncertainty",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/uncertainty",
+      "coverage": "Covariance array size and scalar ranges only; numerical covariance validity and missing-data behavior are not checked."
     },
     {
       "id": "/conf/core/provenance",
-      "method": "D",
-      "status": "schema"
+      "method": "DF",
+      "status": "schema",
+      "requirement": "/req/core/provenance",
+      "coverage": "Producer/method, registration evidence shape and metric RMS presence only; evidence truth, fused/agent completeness and attribution verification are not checked."
     },
     {
       "id": "/conf/core/lifecycle",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/lifecycle"
     },
     {
       "id": "/conf/core/structural-history",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/structural-history"
     },
     {
       "id": "/conf/core/derivation",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/derivation"
     },
     {
       "id": "/conf/core/labels",
       "method": "DF",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/labels",
+      "coverage": "Label field shape only; label changes and identity invariance are not checked."
     },
     {
       "id": "/conf/core/promotion",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/promotion"
     },
     {
       "id": "/conf/core/relation",
       "method": "DF",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/relation",
+      "coverage": "Relation shape and known-type target requirements only; graph behavior and full metadata semantics are not checked."
     },
     {
       "id": "/conf/core/represents",
       "method": "DF",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/core/represents",
+      "coverage": "Representation relation shape only; kind/capture/LOD/license completeness, selection and identity behavior are not checked."
     },
     {
       "id": "/conf/core/identified-as",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/identified-as"
     },
     {
       "id": "/conf/core/dggs-variant",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/dggs-variant"
     },
     {
       "id": "/conf/core/geopose",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/core/geopose"
     },
     {
       "id": "/conf/motion/fields",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/motion/fields",
+      "coverage": "Extension field shape and ranges only; emission obligations, taxonomies and runtime behavior are not checked."
     },
     {
       "id": "/conf/motion/decay",
       "method": "IF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/motion/decay"
     },
     {
       "id": "/conf/history/fields",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/history/fields"
     },
     {
       "id": "/conf/history/advisory",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/history/advisory"
     },
     {
       "id": "/conf/presence/attestation",
       "method": "DF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presence/attestation"
     },
     {
       "id": "/conf/presence/credential",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presence/credential"
     },
     {
       "id": "/conf/semantics/fields",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/semantics/fields",
+      "coverage": "Extension field shape and ranges only; emission obligations, taxonomies and runtime behavior are not checked."
     },
     {
       "id": "/conf/query/operations",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/operations"
     },
     {
       "id": "/conf/query/cell-time",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/cell-time"
     },
     {
       "id": "/conf/query/relations",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/relations"
     },
     {
       "id": "/conf/query/events",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/events"
     },
     {
       "id": "/conf/query/context-envelope",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/context-envelope"
     },
     {
       "id": "/conf/query/ray",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/ray"
     },
     {
       "id": "/conf/query/visibility",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/query/visibility"
     },
     {
       "id": "/conf/features/vector",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/features/vector"
     },
     {
       "id": "/conf/semantics/localization",
       "method": "D",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/semantics/localization",
+      "coverage": "Affordance and quality field shapes only; consumers and truth of quality are not checked."
     },
     {
       "id": "/conf/semantics/event",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/semantics/event"
     },
     {
       "id": "/conf/privacy/pseudonym",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/privacy/pseudonym"
     },
     {
       "id": "/conf/privacy/scoped-disclosure",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/privacy/scoped-disclosure"
     },
     {
       "id": "/conf/privacy/retention",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/privacy/retention"
     },
     {
       "id": "/conf/privacy/consent",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/privacy/consent"
     },
     {
       "id": "/conf/privacy/place-policy",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/privacy/place-policy"
     },
     {
       "id": "/conf/security/authenticated-operations",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/authenticated-operations"
     },
     {
       "id": "/conf/security/replay",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/replay"
     },
     {
       "id": "/conf/security/limits-and-keys",
       "method": "FI",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/limits-and-keys"
     },
     {
       "id": "/conf/security/attested-delegation",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/attested-delegation"
     },
     {
       "id": "/conf/security/signed-content",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/signed-content"
     },
     {
       "id": "/conf/security/disclosure-inheritance",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/disclosure-inheritance"
     },
     {
       "id": "/conf/security/perception-provenance",
       "method": "DF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/perception-provenance"
     },
     {
       "id": "/conf/security/aggregate-suppression",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/aggregate-suppression"
     },
     {
       "id": "/conf/security/erasure",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/erasure"
     },
     {
       "id": "/conf/security/audit",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/audit"
     },
     {
       "id": "/conf/security/assured-labels",
       "method": "DF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/assured-labels"
     },
     {
       "id": "/conf/security/authenticated-state",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/security/authenticated-state"
     },
     {
       "id": "/conf/propagation/region-keyed",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/region-keyed"
     },
     {
       "id": "/conf/propagation/interest",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/interest"
     },
     {
       "id": "/conf/propagation/priority",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/priority"
     },
     {
       "id": "/conf/propagation/backpressure",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/backpressure"
     },
     {
       "id": "/conf/propagation/partition",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/partition"
     },
     {
       "id": "/conf/propagation/failure-handling",
       "method": "IF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/failure-handling"
     },
     {
       "id": "/conf/propagation/replay",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/propagation/replay"
     },
     {
       "id": "/conf/fabric/zone",
       "method": "IF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/fabric/zone"
     },
     {
       "id": "/conf/fabric/home-register",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/fabric/home-register"
     },
     {
       "id": "/conf/fabric/caching",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/fabric/caching"
     },
     {
       "id": "/conf/fabric/handoff",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/fabric/handoff"
     },
     {
       "id": "/conf/fabric/single-writer",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/fabric/single-writer"
     },
     {
       "id": "/conf/fabric/local-first",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/fabric/local-first"
     },
     {
       "id": "/conf/lifecycle/observation",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/lifecycle/observation"
     },
     {
       "id": "/conf/lifecycle/observation-record",
       "method": "DF",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/lifecycle/observation-record",
+      "coverage": "Observation shape and candidate-reference syntax only; evidence semantics, expiry, propagation and identity non-mutation are not checked."
     },
     {
       "id": "/conf/lifecycle/merge",
       "method": "F",
-      "status": "pass"
+      "status": "todo",
+      "requirement": "/req/lifecycle/merge"
     },
     {
       "id": "/conf/lifecycle/split",
       "method": "F",
-      "status": "pass"
+      "status": "todo",
+      "requirement": "/req/lifecycle/split"
     },
     {
       "id": "/conf/lifecycle/lease",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/lifecycle/lease"
     },
     {
       "id": "/conf/lifecycle/layer",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/lifecycle/layer"
     },
     {
       "id": "/conf/scale/almanac",
       "method": "DF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/almanac"
     },
     {
       "id": "/conf/scale/threshold-publish",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/threshold-publish"
     },
     {
       "id": "/conf/scale/keyframe-delta",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/keyframe-delta"
     },
     {
       "id": "/conf/scale/change-locality",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/change-locality"
     },
     {
       "id": "/conf/scale/handle-table",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/handle-table"
     },
     {
       "id": "/conf/scale/generation",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/generation"
     },
     {
       "id": "/conf/scale/digest",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/digest"
     },
     {
       "id": "/conf/scale/list-then-watch",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/list-then-watch"
     },
     {
       "id": "/conf/scale/snapshot",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/snapshot"
     },
     {
       "id": "/conf/scale/aggregate",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/scale/aggregate"
     },
     {
       "id": "/conf/domain/declaration",
       "method": "DF",
-      "status": "schema"
+      "status": "schema",
+      "requirement": "/req/domain/declaration",
+      "coverage": "Domain field shape, modes and scenario derived_from only; domain, authority and provenance semantics are not checked."
     },
     {
       "id": "/conf/domain/embedding",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/embedding"
     },
     {
       "id": "/conf/domain/instancing",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/instancing"
     },
     {
       "id": "/conf/domain/portal",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/portal"
     },
     {
       "id": "/conf/domain/portal-crossing",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/portal-crossing"
     },
     {
       "id": "/conf/domain/proxy",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/proxy"
     },
     {
       "id": "/conf/domain/authority-asymmetry",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/authority-asymmetry"
     },
     {
       "id": "/conf/domain/affordance-truth",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/affordance-truth"
     },
     {
       "id": "/conf/domain/view-identity",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/view-identity"
     },
     {
       "id": "/conf/domain/time-mapping",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/time-mapping"
     },
     {
       "id": "/conf/domain/correspondence",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/domain/correspondence"
     },
     {
       "id": "/conf/presentation/viewpoint",
       "method": "DF",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presentation/viewpoint"
     },
     {
       "id": "/conf/presentation/ladder",
       "method": "D",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presentation/ladder"
     },
     {
       "id": "/conf/presentation/transition",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presentation/transition"
     },
     {
       "id": "/conf/presentation/tier-honesty",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presentation/tier-honesty"
     },
     {
       "id": "/conf/presentation/overlay-confidence",
       "method": "F",
-      "status": "todo"
+      "status": "todo",
+      "requirement": "/req/presentation/overlay-confidence"
     },
     {
       "id": "/conf/core/genesis-privacy",
-      "method": "DF",
-      "status": "todo"
+      "method": "IDF",
+      "status": "todo",
+      "requirement": "/req/core/genesis-privacy"
     },
     {
       "id": "/conf/core/reconciliation",
-      "method": "I",
-      "status": "pass"
+      "method": "IDF",
+      "status": "todo",
+      "requirement": "/req/core/reconciliation"
     },
     {
       "id": "/conf/fabric/conferred-authority",
-      "method": "F",
-      "status": "todo"
+      "method": "IDF",
+      "status": "todo",
+      "requirement": "/req/fabric/conferred-authority"
     },
     {
       "id": "/conf/fabric/overlapping-authority",
-      "method": "F",
-      "status": "todo"
+      "method": "IDF",
+      "status": "todo",
+      "requirement": "/req/fabric/overlapping-authority"
     },
     {
       "id": "/conf/fabric/dispute",
-      "method": "F",
-      "status": "todo"
+      "method": "DF",
+      "status": "todo",
+      "requirement": "/req/fabric/dispute"
     }
-  ]
+  ],
+  "date": "2026-11-03",
+  "encoding": "../encoding/2.4.md"
 }

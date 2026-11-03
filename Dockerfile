@@ -1,4 +1,4 @@
-# 4D-ID reference resolver, version 2.3.
+# 4D-ID reference resolver, version 2.4.
 # Default build needs no native compilation: the resolver runs on a pure-JS store.
 # Set STORE=sqlite (and provide build tools) only if you want SQLite persistence.
 FROM node:22-slim

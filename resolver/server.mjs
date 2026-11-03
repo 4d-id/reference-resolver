@@ -31,13 +31,13 @@ export async function createServer({ seed = true, store } = {}) {
   app.post("/ingest", (req, res) => { try { res.json(R.putState(req.body)); } catch (e) { res.status(400).json({ error: e.message }); } });
   // ---- reconciliation (Part 4, 15.2) ----
   app.post("/reconcile/propose", (req, res) => { try { const { a, b, ...opts } = req.body || {}; res.json(R.proposeMatch(a, b, opts)); } catch (e) { res.status(400).json({ error: e.message }); } });
-  app.get("/reconcile/candidates", (_req, res) => res.json(R.listCandidates()));
+  app.get("/reconcile/candidates", (req, res) => res.json(R.listCandidates({ limit: req.query.limit })));
   app.post("/reconcile/merge", (req, res) => { try { const { a, b, ...opts } = req.body || {}; res.json(R.merge(a, b, opts)); } catch (e) { res.status(400).json({ error: e.message }); } });
   app.post("/reconcile/split", (req, res) => { try { const { id, parts, ...opts } = req.body || {}; res.json(R.split(id, parts, opts)); } catch (e) { res.status(400).json({ error: e.message }); } });
   app.get("/entity/:id/merge-history", (req, res) => res.json(R.mergeHistory(req.params.id)));
 
-  app.get("/health", (_req, res) => res.json({ status: "ok" }));
-  app.get("/", (_req, res) => res.json({ service: "4D-ID reference resolver", version: "2.3", store: R.store.constructor.name, zone_resolution: 6 }));
+  app.get("/health", (_req, res) => res.json({ status: "ok", implementation: "2.4.0", spec: "2.4" }));
+  app.get("/", (_req, res) => res.json({ service: "4D-ID reference resolver", version: "2.4.0", spec: "2.4", store: R.store.constructor.name, zone_resolution: 6 }));
   return { app, resolver: R };
 }
 
@@ -45,5 +45,5 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const port = process.env.PORT || 4141;
   const seed = (process.env.SEED ?? "true") !== "false";
   const { app, resolver } = await createServer({ seed });
-  app.listen(port, () => console.log(`4D-ID reference resolver 2.3 on http://localhost:${port} (store=${resolver.store.constructor.name}, seed=${seed})`));
+  app.listen(port, () => console.log(`4D-ID reference resolver 2.4.0 on http://localhost:${port} (store=${resolver.store.constructor.name}, seed=${seed})`));
 }

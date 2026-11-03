@@ -1,11 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://4did.org/schemas/2.3/common.json",
+  "$id": "https://4did.org/schemas/2.4/common.json",
+  "$comment": "4D-ID 2.4, November 3, 2026. Working draft offered for community review; partial JSON binding, see encoding/2.4.md.",
   "title": "4D-ID common definitions",
   "$defs": {
     "fourdid": {
       "type": "string",
-      "description": "Canonical 4D-ID URI (Part 1, 7.2). Genesis marker optional for a UUIDv7 descriptor.",
+      "description": "Canonical 4D-ID URI (Part 1, 7.2). Legacy spatial variants retain their genesis rules. Variant id uses an opaque non-spatial home token, a UUIDv4/entropy descriptor, and no vertical reference or genesis timestamp. Shape checks do not prove entropy, privacy, UUID version, or normalization.",
+      "allOf": [{
+        "if": { "pattern": "^4did:id:" },
+        "then": { "pattern": "^4did:id:[A-Za-z0-9.-]{1,64}:[A-Za-z0-9_-]{22,86}$" }
+      }],
       "pattern": "^4did:[A-Za-z0-9]{1,8}:(?:[A-Za-z0-9_-]{22,86}\\.)?[A-Za-z0-9.-]{1,64}(?:;v=[A-Za-z0-9.-]{1,40})?:[A-Za-z0-9_-]{22,86}(?::[0-9]{8}T[0-9]{6}(?:\\.[0-9]{1,6})?Z)?$"
     },
     "instant": {
@@ -25,7 +30,7 @@
       "type": "object",
       "description": "Current DGGS anchor (Part 1, 7.3).",
       "properties": {
-        "variant": { "type": "string", "description": "DGGS variant: h3, s2, isea3h, or oct for a virtual domain." },
+        "variant": { "type": "string", "not": { "const": "id" }, "description": "Spatial grid variant: h3, s2, isea3h, or oct for a virtual domain. The identifier mode id is not a grid." },
         "cell": { "type": "string" },
         "resolution": { "type": "integer", "minimum": 0 },
         "vref": { "type": "string", "description": "Vertical datum or floor reference (Part 1, 7.2)." }
@@ -35,7 +40,7 @@
     },
     "pose": {
       "type": "object",
-      "description": "GeoPose-compatible pose relative to parent (Part 1, 7.3, 8).",
+      "description": "GeoPose-compatible transform from the entity local frame to its composition parent, or to the named frame when used by a registration (Part 1, 7.3, 8).",
       "properties": {
         "position": { "$ref": "#/$defs/vec3" },
         "orientation": { "$ref": "#/$defs/quaternion" },
@@ -56,9 +61,12 @@
     },
     "provenance": {
       "type": "object",
-      "description": "Producer, method, registration quality and tier; fused-state and agent-run provenance (Part 1, 7.8).",
+      "description": "Externally supplied producer, method and evidence; optional registration, fused-state and agent-run attribution (Part 1, 7.8). Authority fields are not authentication or authorization proof.",
       "properties": {
-        "method": { "type": "string" },
+        "producer": { "type": "string", "minLength": 1 },
+        "authority": { "type": "string", "minLength": 1, "description": "Attributed responsible authority; verification is deployment policy under Clause 12 and 14.4." },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "method": { "type": "string", "minLength": 1 },
         "rms_m": { "type": "number", "minimum": 0 },
         "tier": { "type": "string", "enum": ["logical", "navigational", "metric"] },
         "registered": { "$ref": "#/$defs/instant" },
@@ -75,6 +83,43 @@
         "evidence_refs": { "type": "array", "items": { "type": "string" } },
         "approval_status": { "type": "string", "enum": ["proposed", "approved", "rejected"] }
       },
+      "required": ["producer", "method"],
+      "dependentRequired": { "tier": ["registered"], "rms_m": ["registered"] },
+      "allOf": [{
+        "if": { "properties": { "tier": { "const": "metric" } }, "required": ["tier"] },
+        "then": { "required": ["rms_m"] }
+      }],
+      "additionalProperties": false
+    },
+    "registration": {
+      "type": "object",
+      "description": "Externally supplied registration (Part 1, 7.3, 7.8). Never a composition edge or identity decision. The transform maps entity-local coordinates into frame. Missing transform is unknown, not identity. Validity ordering and acceptance require semantic checks.",
+      "properties": {
+        "frame": { "$ref": "#/$defs/fourdid" },
+        "transform": { "$ref": "#/$defs/pose" },
+        "tier": { "type": "string", "enum": ["logical", "navigational", "metric"] },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "valid_from": { "$ref": "#/$defs/instant" },
+        "valid_to": { "$ref": "#/$defs/instant" },
+        "provenance": {
+          "allOf": [
+            { "$ref": "#/$defs/provenance" },
+            { "required": ["registered", "evidence_refs"], "properties": { "evidence_refs": { "minItems": 1, "items": { "minLength": 1 } } } }
+          ]
+        },
+        "status": { "type": "string", "enum": ["proposed", "accepted", "rejected", "disputed", "superseded", "expired"] }
+      },
+      "required": ["frame", "tier", "confidence", "valid_from", "valid_to", "provenance", "status"],
+      "allOf": [{
+        "if": { "properties": { "tier": { "const": "metric" } }, "required": ["tier"] },
+        "then": { "properties": { "provenance": { "required": ["rms_m"], "properties": { "tier": { "const": "metric" } } } } }
+      }, {
+        "if": { "properties": { "tier": { "const": "logical" } }, "required": ["tier"] },
+        "then": { "properties": { "provenance": { "properties": { "tier": { "const": "logical" } } } } }
+      }, {
+        "if": { "properties": { "tier": { "const": "navigational" } }, "required": ["tier"] },
+        "then": { "properties": { "provenance": { "properties": { "tier": { "const": "navigational" } } } } }
+      }],
       "additionalProperties": false
     },
     "label": {

@@ -19,7 +19,7 @@ t("virtual domain parsed", pv.domain === "ROOTdesc0000000000000000" && pv.cell =
 
 console.log("mint:");
 const m = mint4did("h3", "8a2830828a37fff");
-t("minted valid", /^4did:h3:8a2830828a37fff:[A-Za-z0-9_-]{22,86}$/.test(m));
+t("minted valid", /^4did:h3:8a2830828a37fff:[A-Za-z0-9_-]{22,86}:\d{8}T\d{6}Z$/.test(m));
 
 console.log("ingest + operations:");
 const R = new Resolver();

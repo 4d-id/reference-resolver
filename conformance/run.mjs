@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { createServer } from "../resolver/server.mjs";
+import { parse4did } from "../resolver/core.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, "..");
@@ -14,12 +15,12 @@ const load = (p) => JSON.parse(readFileSync(join(root, p), "utf8"));
 
 const ajv = new Ajv2020({ allErrors: true, strict: false });
 (addFormats.default || addFormats)(ajv);
-for (const n of ["common", "state", "observation", "snapshot", "domain", "envelope"]) ajv.addSchema(load(`schemas/${n}.json`));
+for (const n of ["common", "state", "observation", "snapshot", "domain", "envelope", "reconciliation"]) ajv.addSchema(load(`schemas/${n}.json`));
 const V = {
-  state: ajv.getSchema("https://4did.org/schemas/2.3/state.json"),
-  domain: ajv.getSchema("https://4did.org/schemas/2.3/domain.json"),
-  envelope: ajv.getSchema("https://4did.org/schemas/2.3/envelope.json"),
-  observation: ajv.getSchema("https://4did.org/schemas/2.3/observation.json")
+  state: ajv.getSchema("https://4did.org/schemas/2.4/state.json"),
+  domain: ajv.getSchema("https://4did.org/schemas/2.4/domain.json"),
+  envelope: ajv.getSchema("https://4did.org/schemas/2.4/envelope.json"),
+  observation: ajv.getSchema("https://4did.org/schemas/2.4/observation.json")
 };
 const FOURDID = /^4did:[A-Za-z0-9]{1,8}:(?:[A-Za-z0-9_-]{22,86}\.)?[A-Za-z0-9.-]{1,64}(?:;v=[A-Za-z0-9.-]{1,40})?:[A-Za-z0-9_-]{22,86}(?::[0-9]{8}T[0-9]{6}(?:\.[0-9]{1,6})?Z)?$/;
 
@@ -31,7 +32,7 @@ const bld = sample.states[0].id;
 const checks = {
   "/conf/core/uri-form": () => sample.states.every((s) => FOURDID.test(s.id)),
   "/conf/core/genesis-implicit": () => FOURDID.test("4did:h3:8a2830828a37fff:AZmR3kB8dH2qT7vLxN1pWg"),
-  "/conf/core/descriptor": () => sample.states.every((s) => s.id.split(":").pop().length >= 22),
+  "/conf/core/descriptor": () => sample.states.every((s) => parse4did(s.id).local.length >= 22),
   "/conf/core/state-fields": () => sample.states.every((s) => V.state(s)),
   "/conf/core/timestamps": () => sample.states.every((s) => s.time?.source && s.time?.publish),
   "/conf/core/uncertainty": () => { const s = sample.states[1]; return V.state(s) && s.uncertainty.position_cov_upper.length === 6; },
