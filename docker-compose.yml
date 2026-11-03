@@ -3,7 +3,7 @@ services:
     build: .
     image: 4did-resolver:2.4
     ports:
-      - "${PORT:-4141}:4141"
+      - "127.0.0.1:${PORT:-4141}:4141"
     environment:
       PORT: "4141"
       STORE: "${STORE:-memory}"
